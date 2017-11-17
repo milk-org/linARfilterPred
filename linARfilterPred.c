@@ -180,7 +180,7 @@ void __attribute__ ((constructor)) libinit_linARfilterPred()
 int_fast8_t init_linARfilterPred()
 {
     strcpy(data.module[data.NBmodule].name, __FILE__);
-    strcpy(data.module[data.NBmodule].info, "linear auto-regressive predictive filters");
+    strcpy(data.module[data.NBmodule].info, "milk    - linear auto-regressive predictive filters");
     data.NBmodule++;
 
 
