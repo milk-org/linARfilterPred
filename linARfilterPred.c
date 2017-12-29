@@ -73,7 +73,7 @@ int clock_gettime(int clk_id, struct timespec *t){
 #endif
 
 extern DATA data;
-
+static int INITSTATUS_linARfilterPred = 0;
 
 
 
@@ -181,8 +181,12 @@ int_fast8_t LINARFILTERPRED_PF_RealTimeApply_cli()
 
 void __attribute__ ((constructor)) libinit_linARfilterPred()
 {
-	init_linARfilterPred();
-	RegisterModule(__FILE__, "cacao", "Linear auto-regressive predictive filters");
+	if ( INITSTATUS_linARfilterPred == 0 )
+	{
+		init_linARfilterPred();
+		RegisterModule(__FILE__, "cacao", "Linear auto-regressive predictive filters");
+		INITSTATUS_linARfilterPred = 1;
+	}
 }
 
 

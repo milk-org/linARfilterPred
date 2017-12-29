@@ -15,6 +15,7 @@
 #define _LINARFILTERPRED_H
 
 
+void __attribute__ ((constructor)) libinit_linARfilterPred();
 int_fast8_t init_linARfilterPred();
 
 
