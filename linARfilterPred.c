@@ -182,13 +182,7 @@ int_fast8_t LINARFILTERPRED_PF_RealTimeApply_cli()
 void __attribute__ ((constructor)) libinit_linARfilterPred()
 {
 	init_linARfilterPred();
-	
-	if(data.progStatus>0)
-	{
-		printf("  Found unloaded shared object in ./libs/ -> LOADING module %s\n", __FILE__);
-		fflush(stdout);
-	}
-
+	RegisterModule(__FILE__, "cacao", "Linear auto-regressive predictive filters");
 }
 
 
@@ -196,15 +190,6 @@ void __attribute__ ((constructor)) libinit_linARfilterPred()
 
 int_fast8_t init_linARfilterPred()
 {
-    strcpy(data.module[data.NBmodule].name, __FILE__);
-    strcpy(data.module[data.NBmodule].package, "cacao");
-    strcpy(data.module[data.NBmodule].info, "Linear auto-regressive predictive filters");
-    data.NBmodule++;
-
-
-	
-	
-
     strcpy(data.cmd[data.NBcmd].key,"pfloadascii");
     strcpy(data.cmd[data.NBcmd].module,__FILE__);
     data.cmd[data.NBcmd].fp = LINARFILTERPRED_LoadASCIIfiles_cli;
