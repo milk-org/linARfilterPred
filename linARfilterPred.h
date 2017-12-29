@@ -65,6 +65,9 @@ long LINARFILTERPRED_SelectBlock(const char *IDin_name, const char *IDblknb_name
 /* =============================================================================================== */
 /* =============================================================================================== */
 
+
+long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const char *IDout_name);
+
 /** @brief Build predictive filter
  * 
  * 

@@ -56,7 +56,7 @@ int clock_gettime(int clk_id, struct timespec *t){
 #endif
 
 
-#include "CLIcore.h"
+#include "CommandLineInterface/CLIcore.h"
 #include "00CORE/00CORE.h"
 #include "COREMOD_tools/COREMOD_tools.h"
 #include "COREMOD_memory/COREMOD_memory.h"
@@ -111,6 +111,15 @@ int_fast8_t LINARFILTERPRED_SelectBlock_cli()
 		return(1);
 }
 
+
+int_fast8_t linARfilterPred_repeat_shift_X_cli()
+{
+	if(CLI_checkarg(1,4)+CLI_checkarg(2,2)+CLI_checkarg(3,3)==0)
+		linARfilterPred_repeat_shift_X(data.cmdargtoken[1].val.string, data.cmdargtoken[2].val.numl, data.cmdargtoken[3].val.string);
+	else
+		return 1;
+	return 0;
+}
 
 int_fast8_t LINARFILTERPRED_Build_LinPredictor_cli()
 {
@@ -173,7 +182,13 @@ int_fast8_t LINARFILTERPRED_PF_RealTimeApply_cli()
 void __attribute__ ((constructor)) libinit_linARfilterPred()
 {
 	init_linARfilterPred();
-	printf(" ...... Loading module %s\n", __FILE__);
+	
+	if(data.progStatus>0)
+	{
+		printf("  Found unloaded shared object in ./libs/ -> LOADING module %s\n", __FILE__);
+		fflush(stdout);
+	}
+
 }
 
 
@@ -182,7 +197,8 @@ void __attribute__ ((constructor)) libinit_linARfilterPred()
 int_fast8_t init_linARfilterPred()
 {
     strcpy(data.module[data.NBmodule].name, __FILE__);
-    strcpy(data.module[data.NBmodule].info, "milk    - linear auto-regressive predictive filters");
+    strcpy(data.module[data.NBmodule].package, "cacao");
+    strcpy(data.module[data.NBmodule].info, "Linear auto-regressive predictive filters");
     data.NBmodule++;
 
 
@@ -208,6 +224,16 @@ int_fast8_t init_linARfilterPred()
     strcpy(data.cmd[data.NBcmd].Ccall,"long LINARFILTERPRED_SelectBlock(const char *IDin_name, const char *IDblknb_name, long blkNB, const char *IDout_name)");
     data.NBcmd++;
 
+
+
+    strcpy(data.cmd[data.NBcmd].key,"imrepshiftx");
+    strcpy(data.cmd[data.NBcmd].module,__FILE__);
+    data.cmd[data.NBcmd].fp = linARfilterPred_repeat_shift_X_cli;
+    strcpy(data.cmd[data.NBcmd].info,"repeat and shift image, extend along X axis");
+    strcpy(data.cmd[data.NBcmd].syntax,"<input image> <NBstep> <output image>");
+    strcpy(data.cmd[data.NBcmd].example,"imrepshiftx imin 5 imout");
+    strcpy(data.cmd[data.NBcmd].Ccall,"long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const char *IDout_name)");
+    data.NBcmd++;
 
     strcpy(data.cmd[data.NBcmd].key,"mkARpfilt");
     strcpy(data.cmd[data.NBcmd].module,__FILE__);
@@ -617,6 +643,52 @@ long LINARFILTERPRED_SelectBlock(const char *IDin_name, const char *IDblknb_name
 
 
 
+/** @brief Expand 2D image/matrix in X direction by repeat and shift
+ * 
+ */ 
+long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const char *IDout_name)
+{
+	long IDin;
+	long xsize, ysize;
+	
+	long IDout;
+	long xsizeout, ysizeout;
+	
+	
+	uint32_t *imsizeout;
+	
+	
+	IDin = image_ID(IDin_name);
+	xsize = data.image[IDin].md[0].size[0];
+	ysize = data.image[IDin].md[0].size[1];
+	xsizeout = xsize * NBstep;
+	ysizeout = ysize - NBstep;
+	
+	imsizeout = (uint32_t*) malloc(sizeof(uint32_t)*2);
+	imsizeout[0] = xsizeout;
+	imsizeout[1] = ysizeout;
+	IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0);
+	free(imsizeout);
+
+	uint32_t ii, jj, jjout;
+	
+	long step;
+	for(step=0; step<NBstep; step++)
+	{
+		uint32_t ii, jj, jjout;
+		for(ii=0; ii<xsize; ii++)
+		{
+			for(jjout=0; jjout<ysize-NBstep;jjout++)
+			{
+				data.image[IDout].array.F[jjout*xsizeout + step*xsize+ii] = data.image[IDin].array.F[(jjout+NBstep-step-1)*xsize + ii];
+			}
+		}
+			
+	}
+	
+	
+	return IDout;
+}
 
 
 
