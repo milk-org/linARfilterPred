@@ -1007,10 +1007,10 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 		printf("=========== LOOP ITERATION %6ld ======= [ExternalPFparam = %d ]\n", iter, ExternalPFparam);
 		printf(" parameters read from %s\n", data.image[IDPFparam].md[0].name);
-		printf("  PFlag      = %20f\n", PFlag_run);
-		printf("  SVDeps     = %20f\n", SVDeps_run);
-		printf("  RegLambda  = %20f\n", RegLambda_run);		
-		printf("  LOOPgain   = %20f\n", LOOPgain_run);
+		printf("  PFlag     = %20f      ", PFlag_run);
+		printf("  SVDeps    = %20f\n", SVDeps_run);
+		printf("  RegLambda = %20f      ", RegLambda_run);		
+		printf("  LOOPgain  = %20f\n", LOOPgain_run);
 		printf("\n");
 						
 		
@@ -1030,8 +1030,8 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 		IDincp = image_ID("PFin_copy");
 		memcpy( data.image[IDincp].array.F, data.image[IDin].array.F, sizeof(float)*inNBelem);
 		
-		save_fits("PFin_copy", "!test_PFin_copy.fits");
-		save_fits(IDin_name, "!test_PFin.fits");
+		//save_fits("PFin_copy", "!test_PFin_copy.fits");
+		//save_fits(IDin_name, "!test_PFin.fits");
 		
 		clock_gettime(CLOCK_REALTIME, &t1);
 
@@ -1099,10 +1099,10 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 
         // ===================== COMPUTE RECONSTRUCTION MATRIX ============================
-        printf("Compute reconstruction matrix\n");
+        printf("Assembling pseudoinverse\n");
         fflush(stdout);
 
-		list_image_ID();
+	//	list_image_ID();
 		
         NB_SVD_Modes = 10000;
 #ifdef HAVE_MAGMA
@@ -1111,7 +1111,7 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
 #endif
 		
-		printf("Done Computing reconstruction matrix\n");
+		printf("Done assembling pseudoinverse\n");
 		fflush(stdout);
 		
         if(Save==1)
