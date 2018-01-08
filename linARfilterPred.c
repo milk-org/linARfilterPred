@@ -1019,7 +1019,7 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 		
 		
 		gain = 1.0 / (iter+1);
-		if(gain<LOOPgain_run)
+		if(gain < LOOPgain_run)
 			gain = LOOPgain_run;
 		
 		clock_gettime(CLOCK_REALTIME, &t0);
@@ -1258,8 +1258,11 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
         data.image[IDoutPF3D].md[0].cnt0++;
         data.image[IDoutPF3D].md[0].write = 0;
 
+	
+	
 		if(LOOPmode==1) // log filter
 		{
+			/*
 			ret = system("mkdir -p ./PredictiveFilters/");
 			   /// measure time
             t = time(NULL);
@@ -1268,6 +1271,7 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
             sprintf(fname,"!./PredictiveFilters/%s_%02d:%02d:%02ld.%09ld.fits", IDoutPF_name, uttime->tm_hour, uttime->tm_min, timenow.tv_sec % 60, timenow.tv_nsec);
 			save_fits(IDoutPF_name, fname);
+			*/
 		}
 		else
 		{
