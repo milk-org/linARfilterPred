@@ -682,22 +682,49 @@ long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const ch
 
 
 
-/** @brief Build predictive filter
- * 
- * IDin_name is a 2D or 3D image
- * 
- * Optional input and output pixel masks select active input & output
- * 
- * 
+/** ## Purpose
+ *
+ * Build predictive filter from real-time AO telemetry
+ *
+ *
+ * ## Masking
+ *
+ *  Optional input and output pixel masks select active input & output
+ *
+ *
+ * ## Loop mode
+ *
+ * If LOOPmode = 1, operate in a loop, and re-run filter computation everytime IDin_name changes
+ *
+ *
+ * ## Input parameters: dynamic mode
+ *
  * if <IFoutPF_name>_PFparam image exist, read parameters from it: PFlag, SVDeps, RegLambda, LOOPgain
  * create it in shared memory by default
- * 
- */
-   
-long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, float PFlag, double SVDeps, double RegLambda, const char *IDoutPF_name, int outMode, int LOOPmode, float LOOPgain)
+ *
+ *
+ * @return output filter image indentifier
+ *
+   */
+
+
+long LINARFILTERPRED_Build_LinPredictor(
+    const char *IDin_name,
+    long PForder,
+    float PFlag,
+    double SVDeps,
+    double RegLambda,
+    const char *IDoutPF_name,
+    int outMode,
+    int LOOPmode,
+    float LOOPgain
+)
 {
+    /// ---
+    /// # Code Description
+
     long IDin, IDmatA, IDout, IDinmask, IDoutmask;
-    long nbspl; // number of samples
+    long nbspl;                                     // Number of samples
     long NBpixin, NBpixout;
     long NBmvec, NBmvec1;
     long mvecsize;
@@ -713,13 +740,14 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 
 
+
     double *ave_inarray;
-    int REG = 0;                                                          /**< 1 if regularization             */
+    int REG = 0;                               // 1 if regularization
     long m, m1, pix, k0, dt;
     int Save = 1;
     long xysize;
     long IDmatC;
-    int use_magma = 1;                                                    /**< use MAGMA library if available  */
+    int use_magma = 1;                         // use MAGMA library if available
     int magmacomp = 0;
 
     long IDfiltC;
@@ -738,7 +766,7 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
     long NB_SVD_Modes;
 
-    int DC_MODE = 0;                                                      /**< 1 if average value of each mode is removed  */
+    int DC_MODE = 0;                            // 1 if average value of each mode is removed
 
 
 
@@ -755,53 +783,59 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
     struct timespec t0;
     struct timespec t1;
     struct timespec t2;
-	struct timespec tdiff;
-	double tdiffv01; // waiting time
-	double tdiffv12; // computing time
+    struct timespec tdiff;
+    double tdiffv01; // waiting time
+    double tdiffv12; // computing time
 
 
-	long IDPFparam; // parameters in shared memory (optional)
-	char imname[200];
-	int ExternalPFparam;
-	
-	float PFlag_run;
-	float SVDeps_run;
-	float RegLambda_run;
-	float LOOPgain_run;
-	float gain;
+    long IDPFparam; // parameters in shared memory (optional)
+    char imname[200];
+    int ExternalPFparam;
+
+    float PFlag_run;
+    float SVDeps_run;
+    float RegLambda_run;
+    float LOOPgain_run;
+    float gain;
 
     uint32_t *imsize;
-	long IDincp;
-	long inNBelem;
+    long IDincp;
+    long inNBelem;
 
-	
 
-	
-	sprintf(imname, "%s_PFparam", IDoutPF_name);
-	imsize = (uint32_t*) malloc(sizeof(uint32_t)*2);
-	imsize[0] = 4;
-	imsize[1] = 1;
-	IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0);
-	free(imsize);
-	
 
-	
-	if((IDPFparam=image_ID(imname))!=-1)
-	{
-		ExternalPFparam = 1;
-		data.image[IDPFparam].array.F[0] = PFlag;
-		data.image[IDPFparam].array.F[1] = SVDeps;
-		data.image[IDPFparam].array.F[2] = RegLambda;
-		data.image[IDPFparam].array.F[3] = LOOPgain;
-	}
-	else
-		ExternalPFparam = 0;
-		
-	
+    /// ## Reading Parameters from Image
 
-	
+    /// If image named <IDoutPF_name>_PFparam exists, the predictive filter
+    /// parameters are read from it instead of the function arguments. \n
+    /// This mode is particularly useful in LOOP mode if the user needs
+    /// to change the parameters between LOOP iterations.\n
 
-	LOOPgain_run = LOOPgain;
+    sprintf(imname, "%s_PFparam", IDoutPF_name);
+    imsize = (uint32_t*) malloc(sizeof(uint32_t)*2);
+    imsize[0] = 4;
+    imsize[1] = 1;
+    IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0);
+    free(imsize);
+
+
+
+    if((IDPFparam=image_ID(imname))!=-1)
+    {
+        ExternalPFparam = 1;
+        data.image[IDPFparam].array.F[0] = PFlag;
+        data.image[IDPFparam].array.F[1] = SVDeps;
+        data.image[IDPFparam].array.F[2] = RegLambda;
+        data.image[IDPFparam].array.F[3] = LOOPgain;
+    }
+    else
+        ExternalPFparam = 0;
+
+
+
+
+
+    LOOPgain_run = LOOPgain;
     if(LOOPmode==0)
     {
         LOOPgain_run = 1.0;
@@ -816,27 +850,43 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
     sprintf(IDoutPF_name3D, "%s_3D", IDoutPF_name);
 
 
-    // =========== SELECT INPUT VALUES =======================
 
+
+    /// ## Selecting input values
+
+    /// The goal of this function is to build a linear link between
+    /// input and output variables. \n
+    /// Input variables values are provided by the input telemetry image
+    /// which is first read to measure dimensions, and allocate memory.\n
+    /// Note that an optional variable selection step allows only a
+    /// subset of the telemetry variables to be considered.
+
+    /// ### Read input telemetry image IDin_name to measure xsize, ysize and number of samples
     IDin = image_ID(IDin_name);
 
     switch (data.image[IDin].md[0].naxis) {
 
     case 2 :
+        /// If 2D image:
+        /// - xysize <- size[0] is number of variables
+        /// - nbspl <- size[1] is number of samples
         nbspl = data.image[IDin].md[0].size[1];
         xsize = data.image[IDin].md[0].size[0];
         ysize = 1;
-		// copy of image to avoid input change during computation
-		IDincp = create_2Dimage_ID("PFin_cp", data.image[IDin].md[0].size[0], data.image[IDin].md[0].size[1]);
-		inNBelem = data.image[IDin].md[0].size[0]*data.image[IDin].md[0].size[1];
+        // copy of image to avoid input change during computation
+        IDincp = create_2Dimage_ID("PFin_cp", data.image[IDin].md[0].size[0], data.image[IDin].md[0].size[1]);
+        inNBelem = data.image[IDin].md[0].size[0]*data.image[IDin].md[0].size[1];
         break;
 
     case 3 :
+        /// If 3D image
+        /// - xysize <- size[0] * size[1] is number of variables
+        /// - nbspl <- size[2] is number of samples
         nbspl = data.image[IDin].md[0].size[2];
         xsize = data.image[IDin].md[0].size[0];
         ysize = data.image[IDin].md[0].size[1];
         IDincp = create_3Dimage_ID("PFin_copy", data.image[IDin].md[0].size[0], data.image[IDin].md[0].size[1], data.image[IDin].md[0].size[2]);
-		inNBelem = data.image[IDin].md[0].size[0]*data.image[IDin].md[0].size[1]*data.image[IDin].md[0].size[2];
+        inNBelem = data.image[IDin].md[0].size[0]*data.image[IDin].md[0].size[1]*data.image[IDin].md[0].size[2];
         break;
 
     default :
@@ -846,12 +896,21 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
     xysize = xsize*ysize;
     printf("xysize = %ld\n", xysize);
 
-
+    /// Once input telemetry size measured, arrays are created:
+    /// - pixarray_x  : x coordinate of each variable (useful to keep track of spatial coordinates)
+    /// - pixarray_y  : y coordinate of each variable (useful to keep track of spatial coordinates)
+    /// - pixarray_xy : combined index (avoids re-computing index frequently)
+    /// - ave_inarray : time averaged value, useful because the predictive filter often needs average to be zero, so we will remove it
 
     pixarray_x = (long*) malloc(sizeof(long)*xsize*ysize);
     pixarray_y = (long*) malloc(sizeof(long)*xsize*ysize);
     pixarray_xy = (long*) malloc(sizeof(long)*xsize*ysize);
     ave_inarray = (double*) malloc(sizeof(double)*xsize*ysize);
+
+    /// ### Select input variables from mask (optional)
+    /// If image "inmask" exists, use it to select which variables are active.
+    /// Otherwise, all variables are active\n
+    /// The number of active input variables is stored in NBpixin.
 
     IDinmask = image_ID("inmask");
     if(IDinmask==-1)
@@ -885,7 +944,17 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 
 
-    // =========== SELECT OUTPUT VALUES =======================
+    /// ## Selecting Output Variables
+    /// By default, the output variables are the same as the input variables,
+    /// so the prediction is performed on the same variables as the input.\n
+    ///
+    /// With inmask and outmask, input AND output variables can be
+    /// selected amond the telemetry.
+
+    /// Arrays are created:
+    /// - outpixarray_x  : x coordinate of each output variable (useful to keep track of spatial coordinates)
+    /// - outpixarray_y  : y coordinate of each output variable (useful to keep track of spatial coordinates)
+    /// - outpixarray_xy : combined output index (avoids re-computing index frequently)
 
     outpixarray_x = (long*) malloc(sizeof(long)*xsize*ysize);
     outpixarray_y = (long*) malloc(sizeof(long)*xsize*ysize);
@@ -921,26 +990,35 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 
 
-	if(ExternalPFparam == 1)
-		PFlag_run = data.image[IDPFparam].array.F[0];
-	else
-		PFlag_run = PFlag;
+    /// ## Reading PFlag from image (optional)
+    /// PFlag_run needs to be read before entering the loop as some
+    /// array sizes depend on its value.
+    if(ExternalPFparam == 1)
+        PFlag_run = data.image[IDPFparam].array.F[0];
+    else
+        PFlag_run = PFlag;
 
 
 
 
 
 
-    // ===================== BUILD DATA MATRIX ============================
-    //
-    // NBmvec is the number of telemetry vectors (each corresponding to a different time)
-    // mvecsize is the size of each vector, equal to NBpixin times PForder
-    //
-    // Data matrix is stored as image of size NBmvec x mvecsize, to be fed to routine compute_SVDpseudoInverse in linopt_imtools (CPU mode) or in cudacomp (GPU mode)
-    //
+    /// ## Build Empty Data Matrix 
+    ///
+    /// The data matrix is build from the telemetry. Each column (= time sample) of the
+    /// data matrix consists of consecutives columns (= time sample) of the input telemetry.\n
+    ///
+    /// Variable naming:
+    /// - NBmvec is the number of telemetry vectors (each corresponding to a different time) in the data matrix.
+    /// - mvecsize is the size of each vector, equal to NBpixin times PForder
+    ///
+    /// Data matrix is stored as image of size NBmvec x mvecsize, to be fed to routine compute_SVDpseudoInverse in linopt_imtools (CPU mode) or in cudacomp (GPU mode)\n
+    ///
     NBmvec = nbspl - PForder - (int) (PFlag_run) - 2;   // could put "-1", but "-2" allows user to change PFlag_run by up to 1 frame without reading out of array
     mvecsize = NBpixin * PForder;                       // size of each sample vector for AR filter, excluding regularization
 
+    /// Regularization can be added to penalize strong coefficients in the predictive filter.
+    /// It is optionally implemented by adding extra columns at the end of the data matrix.\n
     if(REG==0) // no regularization
     {
         printf("NBmvec   = %ld  -> %ld \n", NBmvec, NBmvec);
@@ -957,9 +1035,10 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
     IDmatA = image_ID("PFmatD");
 
 
-    // each column (ii = cst) is a measurement
-    // m index is measurement
-    // dt*NBpixin+pix index is pixel
+    /// Data matrix conventions :
+    /// - each column (ii = cst) is a measurement
+    /// - m index is measurement
+    /// - dt*NBpixin+pix index is pixel
 
     printf("mvecsize = %ld  (%ld x %ld)\n", mvecsize, PForder, NBpixin);
     printf("NBpixin = %ld\n", NBpixin);
@@ -981,8 +1060,10 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
 
 
-
-    // ================= LOOP STARTS HERE ===============
+    /// ## Predictive Filter Computation
+    ///
+    /// In LOOP mode, LOOP STARTS HERE \n
+    ///
 
     if(LOOPmode == 1)
         COREMOD_MEMORY_image_set_semflush(IDin_name, semtrig);
@@ -990,98 +1071,100 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
 
     for(iter=0; iter<NBiter; iter++)
     {
-		if(ExternalPFparam == 1)
-		{
-			PFlag_run = data.image[IDPFparam].array.F[0];
-			SVDeps_run = data.image[IDPFparam].array.F[1];
-			RegLambda_run = data.image[IDPFparam].array.F[2];
-			LOOPgain_run = data.image[IDPFparam].array.F[3];
-		}
-		else
-			{
-				PFlag_run = PFlag;
-				SVDeps_run = SVDeps;
-				RegLambda_run = RegLambda;
-				LOOPgain_run = LOOPgain;
-			}
 
-		printf("=========== LOOP ITERATION %6ld ======= [ExternalPFparam = %d ]\n", iter, ExternalPFparam);
-		printf(" parameters read from %s\n", data.image[IDPFparam].md[0].name);
-		printf("  PFlag     = %20f      ", PFlag_run);
-		printf("  SVDeps    = %20f\n", SVDeps_run);
-		printf("  RegLambda = %20f      ", RegLambda_run);		
-		printf("  LOOPgain  = %20f\n", LOOPgain_run);
-		printf("\n");
-						
-		
-		printf("WAITING FOR INPUT DATA ...... \n");
-		
-		
-		
-		gain = 1.0 / (iter+1);
-		if(gain < LOOPgain_run)
-			gain = LOOPgain_run;
-		
-		clock_gettime(CLOCK_REALTIME, &t0);
+		/// ### Prepare data matrix PFmatD
+
+        /// *STEP: Read parameters from external image (optional)*\n
+        if(ExternalPFparam == 1)
+        {
+            PFlag_run = data.image[IDPFparam].array.F[0];
+            SVDeps_run = data.image[IDPFparam].array.F[1];
+            RegLambda_run = data.image[IDPFparam].array.F[2];
+            LOOPgain_run = data.image[IDPFparam].array.F[3];
+        }
+        else
+        {
+            PFlag_run = PFlag;
+            SVDeps_run = SVDeps;
+            RegLambda_run = RegLambda;
+            LOOPgain_run = LOOPgain;
+        }
+
+        printf("=========== LOOP ITERATION %6ld ======= [ExternalPFparam = %d ]\n", iter, ExternalPFparam);
+        printf(" parameters read from %s\n", data.image[IDPFparam].md[0].name);
+        printf("  PFlag     = %20f      ", PFlag_run);
+        printf("  SVDeps    = %20f\n", SVDeps_run);
+        printf("  RegLambda = %20f      ", RegLambda_run);
+        printf("  LOOPgain  = %20f\n", LOOPgain_run);
+        printf("\n");
+
+
+
+
+
+
+        gain = 1.0 / (iter+1);
+        if(gain < LOOPgain_run)
+            gain = LOOPgain_run;
+
+        /// *STEP: In loop mode, wait for input data to arrive*
+
+        printf("WAITING FOR INPUT DATA ...... \n");
+        clock_gettime(CLOCK_REALTIME, &t0);
         if(LOOPmode == 1)
             sem_wait(data.image[IDin].semptr[semtrig]);
 
-		// copy IDin to IDincp
-		IDincp = image_ID("PFin_copy");
-		memcpy( data.image[IDincp].array.F, data.image[IDin].array.F, sizeof(float)*inNBelem);
-		
-		//save_fits("PFin_copy", "!test_PFin_copy.fits");
-		//save_fits(IDin_name, "!test_PFin.fits");
-		
-		clock_gettime(CLOCK_REALTIME, &t1);
+        /// *STEP: Copy IDin to IDincp*
+        ///
+        /// Necessary as input may be continuously changing between consecutive loop iterations.
+        ///
+        IDincp = image_ID("PFin_copy");
+        memcpy( data.image[IDincp].array.F, data.image[IDin].array.F, sizeof(float)*inNBelem);
+
+        //save_fits("PFin_copy", "!test_PFin_copy.fits");
+        //save_fits(IDin_name, "!test_PFin.fits");
+
+        clock_gettime(CLOCK_REALTIME, &t1);
 
 
-
-    if(DC_MODE == 1) // remove average
-    {
-        for(pix=0; pix<NBpixin; pix++)
+        /// *STEP: if DC_MODE==1, compute average value from each variable*
+        if(DC_MODE == 1) // remove average
         {
-            ave_inarray[pix] = 0.0;
-            for(m=0; m<nbspl; m++)
-                ave_inarray[pix] += data.image[IDincp].array.F[m*xysize+pixarray_xy[pix]];
-            ave_inarray[pix] /= nbspl;
+            for(pix=0; pix<NBpixin; pix++)
+            {
+                ave_inarray[pix] = 0.0;
+                for(m=0; m<nbspl; m++)
+                    ave_inarray[pix] += data.image[IDincp].array.F[m*xysize+pixarray_xy[pix]];
+                ave_inarray[pix] /= nbspl;
+            }
         }
-    }
-    else
-    {
-        for(pix=0; pix<NBpixin; pix++)
-            ave_inarray[pix] = 0.0;
-    }
-
-
-
-
-
-
-        if(LOOPmode == 0)
+        else
         {
-            for(m=0; m<NBmvec1; m++)
+            for(pix=0; pix<NBpixin; pix++)
+                ave_inarray[pix] = 0.0;
+        }
+        
+        
+        
+        
+        ///
+        /// *STEP: Fill up data matrix PFmatD from input telemetry*
+        ///
+         for(m=0; m<NBmvec1; m++)
             {
                 k0 = m + PForder-1; // dt=0 index
                 for(pix=0; pix<NBpixin; pix++)
                     for(dt=0; dt<PForder; dt++)
                         data.image[IDmatA].array.F[(NBpixin*dt+pix)*NBmvec1 + m] = data.image[IDincp].array.F[(k0-dt)*xysize + pixarray_xy[pix]] - ave_inarray[pix];
             }
-            free(ave_inarray);
-        }
-        else
-        {
-            for(m=0; m<NBmvec1; m++)
-            {
-                k0 = m + PForder-1; // dt=0 index
-                for(pix=0; pix<NBpixin; pix++)
-                    for(dt=0; dt<PForder; dt++)
-                        data.image[IDmatA].array.F[(NBpixin*dt+pix)*NBmvec1 + m] = data.image[IDincp].array.F[(k0-dt)*xysize + pixarray_xy[pix]];
-            }
-        }
+        
+        if(LOOPmode == 0)
+            free(ave_inarray);   // No need to hold on to array
 
-
-
+        
+        ///
+        /// *STEP: Write regularization coefficients (optional)*
+        ///
         if(REG==1)
         {
             for(m=0; m<mvecsize; m++)
@@ -1097,33 +1180,39 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
         //list_image_ID();
 
 
-
-        // ===================== COMPUTE RECONSTRUCTION MATRIX ============================
+		/// ### Compute pseudo-inverse of PFmatD
+		///
+        /// *STEP: Compute Pseudo-Inverse of PFmatD*
+        ///
         printf("Assembling pseudoinverse\n");
         fflush(stdout);
 
-	//	list_image_ID();
-		
+        //	list_image_ID();
+        /// If using MAGMA, call function CUDACOMP_magma_compute_SVDpseudoInverse()\n
+        /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
+
         NB_SVD_Modes = 10000;
 #ifdef HAVE_MAGMA
         CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode);
 #else
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
 #endif
-		
-		printf("Done assembling pseudoinverse\n");
-		fflush(stdout);
-		
+
+		/// Result (pseudoinverse) is stored in image PFmatC\n
+        printf("Done assembling pseudoinverse\n");
+        fflush(stdout);
+
         if(Save==1)
         {
             save_fits("PF_VTmat", "!PF_VTmat.fits");
             save_fits("PFmatC", "!PFmatC.fits");
         }
         IDmatC = image_ID("PFmatC");
-
-
-
-        // ===================== COMPUTE FILTERS ============================
+        
+        
+        ///
+        /// ### Assemble Predictive Filters 
+        ///
         printf("Compute filters\n");
         fflush(stdout);
 
@@ -1196,17 +1285,19 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
                 ID_Pfilt = create_3Dimage_ID(filtname, xsize, ysize, PForder);
             }
 
-            // fill in valfarray
-
+            // fill in valfarray, the output vector
+            // alpha is used here to interpolate between two consecutive measurements, to account for the fact that PFlag is not an integer
             for(m=0; m<NBmvec; m++)
             {
                 k0 = m + PForder -1;
                 k0 += (long) PFlag_run;
-				
+
                 valfarray[m] = (1.0-alpha)*data.image[IDincp].array.F[(k0)*xysize + outpixarray_xy[PFpix]] + alpha*data.image[IDincp].array.F[(k0+1)*xysize + outpixarray_xy[PFpix]];
             }
-
-
+            
+            
+            
+            // loop on input values
             for(pix=0; pix<NBpixin; pix++)
             {
                 for(dt=0; dt<PForder; dt++)
@@ -1258,42 +1349,43 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
         data.image[IDoutPF3D].md[0].cnt0++;
         data.image[IDoutPF3D].md[0].write = 0;
 
-	
-	
-		if(LOOPmode==1) // log filter
-		{
-			/*
-			ret = system("mkdir -p ./PredictiveFilters/");
-			   /// measure time
+
+
+        if(LOOPmode==1) // log filter
+        {
+            /*
+            ret = system("mkdir -p ./PredictiveFilters/");
+               /// measure time
             t = time(NULL);
             uttime = gmtime(&t);
-			clock_gettime(CLOCK_REALTIME, &timenow);
+            clock_gettime(CLOCK_REALTIME, &timenow);
 
             sprintf(fname,"!./PredictiveFilters/%s_%02d:%02d:%02ld.%09ld.fits", IDoutPF_name, uttime->tm_hour, uttime->tm_min, timenow.tv_sec % 60, timenow.tv_nsec);
-			save_fits(IDoutPF_name, fname);
-			*/
-		}
-		else
-		{
-			save_fits(IDoutPF_name, "!_outPF.fits");
-			save_fits(IDoutPF_name3D, "!_outPF3D.fits");
+            save_fits(IDoutPF_name, fname);
+            */
         }
-        
+        else
+        {
+            save_fits(IDoutPF_name, "!_outPF.fits");
+            save_fits(IDoutPF_name3D, "!_outPF3D.fits");
+        }
+
         printf("DONE\n");
         fflush(stdout);
         clock_gettime(CLOCK_REALTIME, &t2);
 
         tdiff = info_time_diff(t0, t1);
         tdiffv01 = 1.0*tdiff.tv_sec + 1.0e-9*tdiff.tv_nsec;
-        
+
         tdiff = info_time_diff(t1, t2);
         tdiffv12 = 1.0*tdiff.tv_sec + 1.0e-9*tdiff.tv_nsec;
-    
-    
-		printf("Computing time = %5.3f s / %5.3f s -> fraction = %8.6f\n", tdiffv12, tdiffv01+tdiffv12, tdiffv12/(tdiffv01+tdiffv12));
+
+
+        printf("Computing time = %5.3f s / %5.3f s -> fraction = %8.6f\n", tdiffv12, tdiffv01+tdiffv12, tdiffv12/(tdiffv01+tdiffv12));
     }
-
-
+    ///
+    /// In LOOP mode, LOOP ENDS HERE \n
+    ///
 
 
 
@@ -1309,8 +1401,13 @@ long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, flo
     free(outpixarray_y);
     free(outpixarray_xy);
 
+    ///
+    /// ---
+    ///
+
     return(IDoutPF2D);
 }
+
 
 
 

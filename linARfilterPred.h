@@ -72,16 +72,6 @@ long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const ch
 /** @brief Build predictive filter
  * 
  * 
- * @param[in]  IDin_name     Input telemetry, can be a 2D or 3D image
- * @param[in]  PForder       Filter order: number of time steps in filter 
- * @param[in]  SVDeps        Cutoff limit on singular values
- * @param[in]  RegLambda     Regularization parameter
- * @param[out] IDoutPF_name  Output predictive filter name
- * @param[in]  outMode       Output mode. 0: do not write individual files, 1: write individual files (note: output filter cube is always written)
- * @param[in]  LOOPmode      1 if running in infinite loop waiting for input telemetry
- * @param[in]  LOOPgain      if running in loop, mixing coefficient between previous and current filter
- * 
- * 
  * Optional pixel masks select input and output variables: "inmask" and "outmask"
  * 
  * 
@@ -92,8 +82,18 @@ long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const ch
  * 
  * @return output filter image index
  */
-  
-long LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, float PFlag, double SVDeps, double RegLambda, const char *IDoutPF_name, int outMode, int LOOPmode, float LOOPgain);
+ 
+long LINARFILTERPRED_Build_LinPredictor(
+	const char *IDin_name,      ///< [in]  Input telemetry, a 2D or 3D image
+	long PForder,				///< [in]  Number of time steps in output filter
+	float PFlag, 				///< [in]  Time lag between last measurement and prediction, unit: sampling period
+	double SVDeps, 				///< [in]  Singular value cutoff limit. Ratio between strongest singular value and limit
+	double RegLambda, 			///< [in]  Regularization paramater
+	const char *IDoutPF_name, 	///< [in]  Output predictive filter name
+	int outMode, 				///< [in]  Output mode. 0: do not write individual files, 1: write individual files (note: output filter cube is always written)
+	int LOOPmode, 				///< [in]  1 if running in infinite loop waiting for input telemetry
+	float LOOPgain				///< [in]  If running in loop, mixing coefficient between previous and current filter
+	);
 
 ///@}
 
