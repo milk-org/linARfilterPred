@@ -9,7 +9,7 @@
  *
  * 
  * @bug No known bugs.
- * 
+ *This is an OS X Sierra compatible version  - TC, 03/23/2018 
  */
 
 
@@ -36,7 +36,7 @@
 #include <gsl/gsl_cblas.h>
 #include <gsl/gsl_blas.h>
 
-#ifdef __MACH__
+/*#ifdef __MACH__
 #include <mach/mach_time.h>
 #define CLOCK_REALTIME 0
 #define CLOCK_MONOTONIC 0
@@ -51,9 +51,9 @@ int clock_gettime(int clk_id, struct timespec *t){
     t->tv_nsec = nseconds;
     return 0;, optres[ii]
 }
-#else
+#else*/
 #include <time.h>
-#endif
+//#endif
 
 
 #include "CommandLineInterface/CLIcore.h"
