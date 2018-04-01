@@ -72,7 +72,6 @@ int clock_gettime(int clk_id, struct timespec *t){
 #include "cudacomp/cudacomp.h"
 #endif
 
-extern DATA data;
 static int INITSTATUS_linARfilterPred = 0;
 
 
