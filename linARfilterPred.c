@@ -350,7 +350,13 @@ int NBwords(const char sentence[ ])
  * NBfr files
 */
 
-long LINARFILTERPRED_LoadASCIIfiles(double tstart, double dt, long NBpt, long NBfr, const char *IDoutname)
+long LINARFILTERPRED_LoadASCIIfiles(
+	double tstart, 
+	double dt, 
+	long NBpt, 
+	long NBfr, 
+	const char *IDoutname
+	)
 {
 	FILE *fp;
 	long NBfiles;
@@ -528,7 +534,12 @@ long LINARFILTERPRED_LoadASCIIfiles(double tstart, double dt, long NBpt, long NB
 
 
 // select block on first dimension 
-long LINARFILTERPRED_SelectBlock(const char *IDin_name, const char *IDblknb_name, long blkNB, const char *IDout_name)
+long LINARFILTERPRED_SelectBlock(
+	const char *IDin_name, 
+	const char *IDblknb_name, 
+	long blkNB, 
+	const char *IDout_name
+	)
 {
 	long IDin, IDblknb;
 	long naxis, axis;
@@ -634,7 +645,11 @@ long LINARFILTERPRED_SelectBlock(const char *IDin_name, const char *IDblknb_name
 /** @brief Expand 2D image/matrix in X direction by repeat and shift
  * 
  */ 
-long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const char *IDout_name)
+long linARfilterPred_repeat_shift_X(
+	const char *IDin_name, 
+	long NBstep, 
+	const char *IDout_name
+	)
 {
 	long IDin;
 	long xsize, ysize;
@@ -709,14 +724,14 @@ long linARfilterPred_repeat_shift_X(const char *IDin_name, long NBstep, const ch
 
 long LINARFILTERPRED_Build_LinPredictor(
     const char *IDin_name,
-    long PForder,
-    float PFlag,
-    double SVDeps,
-    double RegLambda,
+    long        PForder,
+    float       PFlag,
+    double      SVDeps,
+    double      RegLambda,
     const char *IDoutPF_name,
-    int outMode,
-    int LOOPmode,
-    float LOOPgain
+    int         outMode,
+    int         LOOPmode,
+    float       LOOPgain
 )
 {
     /// ---
@@ -803,6 +818,20 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 
 
+	list_variable_ID();
+	
+	
+	int PSINV_MODE = 0;
+	long IDv;
+	if( (IDv = variable_ID("_SVD_PSINV")) != -1)
+	{
+		PSINV_MODE = (int) (data.variable[IDv].value.f + 0.1);
+		printf("PSINV_MODE = %d\n", PSINV_MODE);
+	}
+	
+
+
+
     /// ## Reading Parameters from Image
 
     /// If image named <IDoutPF_name>_PFparam exists, the predictive filter
@@ -840,7 +869,6 @@ long LINARFILTERPRED_Build_LinPredictor(
         LOOPgain_run = 1.0;
         NBiter = 1;
     }
-
     else
     {
         NBiter = 100000000;
@@ -1192,7 +1220,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 
         NB_SVD_Modes = 10000;
 #ifdef HAVE_MAGMA
-        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, 0, 1.e-4, 1.e-7);
+        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-4, 1.e-0);
 #else
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
 #endif
