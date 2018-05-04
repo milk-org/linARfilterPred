@@ -183,7 +183,7 @@ void __attribute__ ((constructor)) libinit_linARfilterPred()
 	if ( INITSTATUS_linARfilterPred == 0 )
 	{
 		init_linARfilterPred();
-		RegisterModule(__FILE__, "cacao", "Linear auto-regressive predictive filters");
+		RegisterModule(__FILE__, "milk", "Linear auto-regressive predictive filters");
 		INITSTATUS_linARfilterPred = 1;
 	}
 }
