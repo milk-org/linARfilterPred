@@ -68,6 +68,11 @@ int clock_gettime(int clk_id, struct timespec *t){
 
 #include "linARfilterPred/linARfilterPred.h"
 
+
+
+
+
+
 #ifdef HAVE_CUDA
 #include "cudacomp/cudacomp.h"
 #endif
@@ -1219,11 +1224,15 @@ long LINARFILTERPRED_Build_LinPredictor(
         /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
 
         NB_SVD_Modes = 10000;
+
 #ifdef HAVE_MAGMA
+		printf("Using magma ...\n");
         CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-4, 1.e-0);
 #else
+		printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
 #endif
+
 
 		/// Result (pseudoinverse) is stored in image PFmatC\n
         printf("Done assembling pseudoinverse\n");
