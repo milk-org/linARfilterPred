@@ -1037,6 +1037,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 
     /// ## Build Empty Data Matrix 
     ///
+    /// Note: column / row description follows FITS file viewing conventions.\n
     /// The data matrix is build from the telemetry. Each column (= time sample) of the
     /// data matrix consists of consecutives columns (= time sample) of the input telemetry.\n
     ///
