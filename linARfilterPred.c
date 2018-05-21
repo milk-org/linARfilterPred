@@ -127,8 +127,8 @@ int_fast8_t linARfilterPred_repeat_shift_X_cli()
 
 int_fast8_t LINARFILTERPRED_Build_LinPredictor_cli()
 {
-	if(CLI_checkarg(1,4)+CLI_checkarg(2,2)+CLI_checkarg(3,1)+CLI_checkarg(4,1)+CLI_checkarg(5,1)+CLI_checkarg(6,3)+CLI_checkarg(7,2)+CLI_checkarg(8,1)==0)
-		LINARFILTERPRED_Build_LinPredictor(data.cmdargtoken[1].val.string, data.cmdargtoken[2].val.numl, data.cmdargtoken[3].val.numf, data.cmdargtoken[4].val.numf, data.cmdargtoken[5].val.numf, data.cmdargtoken[6].val.string, 1, data.cmdargtoken[7].val.numl, data.cmdargtoken[8].val.numf);
+	if(CLI_checkarg(1,4)+CLI_checkarg(2,2)+CLI_checkarg(3,1)+CLI_checkarg(4,1)+CLI_checkarg(5,1)+CLI_checkarg(6,3)+CLI_checkarg(7,2)+CLI_checkarg(8,1)+CLI_checkarg(9,2)==0)
+		LINARFILTERPRED_Build_LinPredictor(data.cmdargtoken[1].val.string, data.cmdargtoken[2].val.numl, data.cmdargtoken[3].val.numf, data.cmdargtoken[4].val.numf, data.cmdargtoken[5].val.numf, data.cmdargtoken[6].val.string, 1, data.cmdargtoken[7].val.numl, data.cmdargtoken[8].val.numf, data.cmdargtoken[9].val.numl);
 	else
        return 1;
 
@@ -232,9 +232,9 @@ int_fast8_t init_linARfilterPred()
     strcpy(data.cmd[data.NBcmd].module,__FILE__);
     data.cmd[data.NBcmd].fp = LINARFILTERPRED_Build_LinPredictor_cli;
     strcpy(data.cmd[data.NBcmd].info,"Make linear auto-regressive filter");
-    strcpy(data.cmd[data.NBcmd].syntax,"<input data> <PForder> <PFlag> <SVDeps> <regularization param> <output filters> <LOOPmode> <LOOPgain>");
-    strcpy(data.cmd[data.NBcmd].example,"mkARpfilt indata 5 2.4 0.0001 0.0 outPF 0 0.1");
-    strcpy(data.cmd[data.NBcmd].Ccall,"int LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, float PFlag, double SVDeps, double RegLambda, const char *IDoutPF, int outMode, int LOOPmode, float LOOPgain)");
+    strcpy(data.cmd[data.NBcmd].syntax,"<input data> <PForder> <PFlag> <SVDeps> <regularization param> <output filters> <LOOPmode> <LOOPgain> <testmode>");
+    strcpy(data.cmd[data.NBcmd].example,"mkARpfilt indata 5 2.4 0.0001 0.0 outPF 0 0.1 1");
+    strcpy(data.cmd[data.NBcmd].Ccall,"int LINARFILTERPRED_Build_LinPredictor(const char *IDin_name, long PForder, float PFlag, double SVDeps, double RegLambda, const char *IDoutPF, int outMode, int LOOPmode, float LOOPgain, int testmode)");
     data.NBcmd++;
 
   /*  strcpy(data.cmd[data.NBcmd].key,"applyPfiltRT");
@@ -736,7 +736,8 @@ long LINARFILTERPRED_Build_LinPredictor(
     const char *IDoutPF_name,
     int         outMode,
     int         LOOPmode,
-    float       LOOPgain
+    float       LOOPgain,
+    int 		testmode
 )
 {
     /// ---
@@ -1228,7 +1229,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 #ifdef HAVE_MAGMA
 		printf("Using magma ...\n");
-        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-6, 1.e-0);
+        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-6, 1.e-0, testmode);
 #else
 		printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");

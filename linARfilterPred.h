@@ -92,7 +92,8 @@ long LINARFILTERPRED_Build_LinPredictor(
 	const char *IDoutPF_name, 	///< [in]  Output predictive filter name
 	int outMode, 				///< [in]  Output mode. 0: do not write individual files, 1: write individual files (note: output filter cube is always written)
 	int LOOPmode, 				///< [in]  1 if running in infinite loop waiting for input telemetry
-	float LOOPgain				///< [in]  If running in loop, mixing coefficient between previous and current filter
+	float LOOPgain,				///< [in]  If running in loop, mixing coefficient between previous and current filter
+	int testmode
 	);
 
 ///@}
