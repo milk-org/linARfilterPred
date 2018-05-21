@@ -1228,7 +1228,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 #ifdef HAVE_MAGMA
 		printf("Using magma ...\n");
-        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-4, 1.e-0);
+        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-8, 1.e-0);
 #else
 		printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
