@@ -1337,6 +1337,8 @@ long LINARFILTERPRED_Build_LinPredictor(
 		long IDoutPF2Dn = image_ID("psinvPFmat");
 		if(IDoutPF2Dn==-1)
 		{
+			printf("------------------- CPU computing PF matrix\n");
+			
 			IDoutPF2Dn = create_2Dimage_ID("psinvPFmat", NBpixin*PForder, NBpixout);
 			for(PFpix=0; PFpix<NBpixout; PFpix++) // PFpix is the pixel for which the filter is created (axis 1 in cube, jj)
 			{
@@ -1356,7 +1358,11 @@ long LINARFILTERPRED_Build_LinPredictor(
             }
 			}
 		}
+		else
+			printf("------------------- Using GPU-computed PF matrix\n");
 		delete_image_ID("PFfmdat");
+		
+		
 		
 		// Mix current PF with last one
 		data.image[IDoutPF2D].md[0].write = 1;
@@ -1367,14 +1373,18 @@ long LINARFILTERPRED_Build_LinPredictor(
 		}
 		else
 		{
+			printf("Mixing PF matrix with gain = %f ....", gain);
+			fflush(stdout);
 			for(PFpix=0; PFpix<NBpixout; PFpix++)
-			for(pix=0; pix<NBpixin; pix++)
-				for(dt=0; dt<PForder; dt++)
-				{
+				for(pix=0; pix<NBpixin; pix++)
+					for(dt=0; dt<PForder; dt++)
+					{
 					val0 = data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
 					val = data.image[IDoutPF2Dn].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
 					data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix] = (1.0-gain)*val0 + gain*val;
-				}
+					}
+			printf(" done\n");
+			fflush(stdout);
 		}
         COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2D, -1);
         data.image[IDoutPF2D].md[0].cnt0++;
