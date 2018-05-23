@@ -764,7 +764,7 @@ long LINARFILTERPRED_Build_LinPredictor(
     double *ave_inarray;
     int REG = 0;                               // 1 if regularization
     long m, m1, pix, k0, dt;
-    int Save = 1;
+    int Save = 0;
     long xysize;
     long IDmatC;
     int use_magma = 1;                         // use MAGMA library if available
