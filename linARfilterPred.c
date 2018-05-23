@@ -771,7 +771,7 @@ long LINARFILTERPRED_Build_LinPredictor(
     int magmacomp = 0;
 
     long IDfiltC;
-    float *valfarray;
+   // float *valfarray;
     float alpha;
     long PFpix;
     char filtname[200];
@@ -781,8 +781,8 @@ long LINARFILTERPRED_Build_LinPredictor(
     long ind1;
     int ret;
     long IDoutPF2D;
-    long IDoutPF3D;
-    char IDoutPF_name3D[500];
+  //  long IDoutPF3D;
+  //  char IDoutPF_name3D[500];
 
     long NB_SVD_Modes;
 
@@ -835,7 +835,19 @@ long LINARFILTERPRED_Build_LinPredictor(
 		printf("PSINV_MODE = %d\n", PSINV_MODE);
 	}
 	
+	float PSINV_s = 1.0e-6;
+	if( (IDv = variable_ID("_SVD_s")) != -1)
+	{
+		PSINV_s = data.variable[IDv].value.f;
+		printf("PSINV_s = %d\n", PSINV_s);
+	}
 
+	float PSINV_tol = 1.0;
+	if( (IDv = variable_ID("_SVD_tol")) != -1)
+	{
+		PSINV_tol = data.variable[IDv].value.f;
+		printf("PSINV_tol = %d\n", PSINV_tol);
+	}
 
 
     /// ## Reading Parameters from Image
@@ -880,7 +892,7 @@ long LINARFILTERPRED_Build_LinPredictor(
         NBiter = 100000000;
     }
 
-    sprintf(IDoutPF_name3D, "%s_3D", IDoutPF_name);
+    //sprintf(IDoutPF_name3D, "%s_3D", IDoutPF_name);
 
 
 
@@ -1221,7 +1233,24 @@ long LINARFILTERPRED_Build_LinPredictor(
         printf("Assembling pseudoinverse\n");
         fflush(stdout);
 
-        //	list_image_ID();
+
+
+
+
+		// Assemble future measured data matrix
+		long IDfm = create_2Dimage_ID("PFfmdat", NBmvec, NBpixout);
+		alpha = PFlag_run - ((long) PFlag_run);
+        for(PFpix=0; PFpix<NBpixout; PFpix++)
+			for(m=0; m<NBmvec; m++)
+            {
+                k0 = m + PForder -1;
+                k0 += (long) PFlag_run;
+
+                data.image[IDfm].array.F[PFpix*NBmvec+m] = (1.0-alpha)*data.image[IDincp].array.F[(k0)*xysize + outpixarray_xy[PFpix]] + alpha*data.image[IDincp].array.F[(k0+1)*xysize + outpixarray_xy[PFpix]];				
+            }
+        save_fits("PFfmdat", "!PFfmdat.fits");
+
+    
         /// If using MAGMA, call function CUDACOMP_magma_compute_SVDpseudoInverse()\n
         /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
 
@@ -1229,12 +1258,14 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 #ifdef HAVE_MAGMA
 		printf("Using magma ...\n");
-        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, 1.e-6, 1.e-0, testmode);
+        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, PSINV_s, PSINV_tol, testmode);
 #else
 		printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes, "PF_VTmat");
 #endif
 
+		
+		
 
 		/// Result (pseudoinverse) is stored in image PFmatC\n
         printf("Done assembling pseudoinverse\n");
@@ -1249,11 +1280,10 @@ long LINARFILTERPRED_Build_LinPredictor(
         
         
         ///
-        /// ### Assemble Predictive Filters 
+        /// ### Assemble Predictive Filter
         ///
         printf("Compute filters\n");
         fflush(stdout);
-
 
 
 
@@ -1270,10 +1300,7 @@ long LINARFILTERPRED_Build_LinPredictor(
         // axis 1 [jj1] : output mode
 
         if( LOOPmode == 0 )
-        {
             IDoutPF2D = create_2Dimage_ID(IDoutPF_name, NBpixin*PForder, NBpixout);
-            IDoutPF3D = create_3Dimage_ID(IDoutPF_name3D, xysize, xysize, PForder);
-        }
 
         else
         {
@@ -1285,55 +1312,34 @@ long LINARFILTERPRED_Build_LinPredictor(
                 IDoutPF2D = create_image_ID(IDoutPF_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1);
                 free(imsizearray);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name, -1);
-
-
-                imsizearray = (uint32_t*) malloc(sizeof(uint32_t)*3);
-                imsizearray[0] = xysize;
-                imsizearray[1] = xysize;
-                imsizearray[2] = PForder;
-                IDoutPF3D = create_image_ID(IDoutPF_name3D, 3, imsizearray, _DATATYPE_FLOAT, 1, 1);
-                free(imsizearray);
-                COREMOD_MEMORY_image_set_semflush(IDoutPF_name3D, -1);
             }
             else
-            {
                 IDoutPF2D = image_ID(IDoutPF_name);
-                IDoutPF3D = image_ID(IDoutPF_name3D);
-            }
         }
 
 
         IDoutmask = image_ID("outmask");
 
-        if(iter==0)
-            valfarray = (float*) malloc(sizeof(float)*NBmvec);
 
 
+		printf("===========================================================\n");
+		printf("ASSEMBLING OUTPUT\n");
+		printf("  NBpixout = %ld\n", NBpixout);
+		printf("  NBmvec   = %ld\n", NBmvec);
+		printf("  NBmvec1  = %ld\n", NBmvec1);
+		printf("  NBpixin  = %ld\n", NBpixin);
+		printf("  PForder  = %ld\n", PForder);
+		printf("===========================================================\n");
 
-        data.image[IDoutPF2D].md[0].write = 1;
-        data.image[IDoutPF3D].md[0].write = 1;
 
-        alpha = PFlag_run - ((long) PFlag_run);
-        for(PFpix=0; PFpix<NBpixout; PFpix++) // PFpix is the pixel for which the filter is created (axis 1 in cube, jj)
-        {
-            if(LOOPmode==0)
-            {   // INDIVIDUAL FILTERS
-                sprintf(filtname, "PFfilt_%06ld_%03ld_%03ld", outpixarray_xy[PFpix], outpixarray_x[PFpix], outpixarray_y[PFpix]);
-                sprintf(filtfname, "!./pixfilters/PFfilt_%06ld_%03ld_%03ld.fits", outpixarray_xy[PFpix], outpixarray_x[PFpix], outpixarray_y[PFpix]);
-                ID_Pfilt = create_3Dimage_ID(filtname, xsize, ysize, PForder);
-            }
+			
 
-            // fill in valfarray, the output vector
-            // alpha is used here to interpolate between two consecutive measurements, to account for the fact that PFlag is not an integer
-            for(m=0; m<NBmvec; m++)
-            {
-                k0 = m + PForder -1;
-                k0 += (long) PFlag_run;
-
-                valfarray[m] = (1.0-alpha)*data.image[IDincp].array.F[(k0)*xysize + outpixarray_xy[PFpix]] + alpha*data.image[IDincp].array.F[(k0+1)*xysize + outpixarray_xy[PFpix]];
-            }
-            
-            
+		long IDoutPF2Dn = image_ID("psinvPFmat");
+		if(IDoutPF2Dn==-1)
+		{
+			IDoutPF2Dn = create_2Dimage_ID("psinvPFmat", NBpixin*PForder, NBpixout);
+			for(PFpix=0; PFpix<NBpixout; PFpix++) // PFpix is the pixel for which the filter is created (axis 1 in cube, jj)
+			{
             
             // loop on input values
             for(pix=0; pix<NBpixin; pix++)
@@ -1343,68 +1349,41 @@ long LINARFILTERPRED_Build_LinPredictor(
                     val = 0.0;
                     ind1 = (NBpixin*dt+pix)*NBmvec1;
                     for(m=0; m<NBmvec; m++)
-                        val += data.image[IDmatC].array.F[ind1+m] * valfarray[m];
+                        val += data.image[IDmatC].array.F[ind1+m] * data.image[IDfm].array.F[PFpix*NBmvec+m];
 
-                    val0 = data.image[IDoutPF3D].array.F[dt*xysize*xysize  + outpixarray_xy[PFpix]*xysize + pixarray_xy[pix]];
-                    val = (1.0-gain)*val0 + gain*val;
-
-                    data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix] = val;
-                    data.image[IDoutPF3D].array.F[dt*xysize*xysize  + outpixarray_xy[PFpix]*xysize + pixarray_xy[pix]] = val;
-
+                    data.image[IDoutPF2Dn].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix] = val;
                 }
             }
-
-
-
-
-            if(LOOPmode==0)
-            {
-                for(pix=0; pix<NBpixin; pix++)
-                    for(dt=0; dt<PForder; dt++)
-                    {
-                        val = 0.0;
-                        ind1 = (NBpixin*dt+pix)*NBmvec1;
-                        for(m=0; m<NBmvec; m++)
-                            val += data.image[IDmatC].array.F[ind1+m] * valfarray[m];
-
-                        data.image[ID_Pfilt].array.F[xysize*dt + pixarray_xy[pix]] =  val;
-                    }
-
-                save_fits(filtname, filtfname);
-            }
-        }
-
-
-
-
+			}
+		}
+		delete_image_ID("PFfmdat");
+		
+		// Mix current PF with last one
+		data.image[IDoutPF2D].md[0].write = 1;
+		if(LOOPmode==0)
+		{
+			memcpy(data.image[IDoutPF2D].array.F, data.image[IDoutPF2Dn].array.F, sizeof(float)*NBpixout*NBpixin*PForder);
+			save_fits(IDoutPF_name, "!_outPF.fits");
+		}
+		else
+		{
+			for(PFpix=0; PFpix<NBpixout; PFpix++)
+			for(pix=0; pix<NBpixin; pix++)
+				for(dt=0; dt<PForder; dt++)
+				{
+					val0 = data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
+					val = data.image[IDoutPF2Dn].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
+					data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix] = (1.0-gain)*val0 + gain*val;
+				}
+		}
         COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2D, -1);
         data.image[IDoutPF2D].md[0].cnt0++;
         data.image[IDoutPF2D].md[0].write = 0;
 
-        COREMOD_MEMORY_image_set_sempost_byID(IDoutPF3D, -1);
-        data.image[IDoutPF3D].md[0].cnt0++;
-        data.image[IDoutPF3D].md[0].write = 0;
 
 
-
-        if(LOOPmode==1) // log filter
-        {
-            /*
-            ret = system("mkdir -p ./PredictiveFilters/");
-               /// measure time
-            t = time(NULL);
-            uttime = gmtime(&t);
-            clock_gettime(CLOCK_REALTIME, &timenow);
-
-            sprintf(fname,"!./PredictiveFilters/%s_%02d:%02d:%02ld.%09ld.fits", IDoutPF_name, uttime->tm_hour, uttime->tm_min, timenow.tv_sec % 60, timenow.tv_nsec);
-            save_fits(IDoutPF_name, fname);
-            */
-        }
-        else
-        {
-            save_fits(IDoutPF_name, "!_outPF.fits");
-            save_fits(IDoutPF_name3D, "!_outPF3D.fits");
-        }
+       
+       
 
         printf("DONE\n");
         fflush(stdout);
@@ -1427,7 +1406,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 
 
-    free(valfarray);
+   // free(valfarray);
 
     free(pixarray_x);
     free(pixarray_y);
