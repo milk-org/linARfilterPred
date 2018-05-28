@@ -722,6 +722,7 @@ long linARfilterPred_repeat_shift_X(
  * create it in shared memory by default
  *
  *
+ * @return If testmode=2, write 3D output filter
  * @return output filter image indentifier
  *
    */
@@ -1392,6 +1393,20 @@ long LINARFILTERPRED_Build_LinPredictor(
 
 
 
+		if(testmode==2)
+		{
+			printf("Prepare 3D output \n");
+			
+			long IDoutPF3D = create_3Dimage_ID("outPF3D", NBpixin, NBpixout, PForder);
+			for(pix=0; pix<NBpixin; pix++)
+				for(PFpix=0; PFpix<NBpixout; PFpix++)
+					for(dt=0; dt<PForder; dt++)
+					{
+						val = data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
+						data.image[IDoutPF3D].array.F[NBpixout*NBpixin*dt + NBpixin*PFpix + pix] = val;
+					}
+			save_fits("outPF3D", "!_outPF3D.fits");
+		}
        
        
 
@@ -1480,12 +1495,16 @@ long LINARFILTERPRED_Apply_LinPredictor_RT(const char *IDfilt_name, const char *
 	
 	
 	
+	
 	IDfilt = image_ID(IDfilt_name);
 	IDin = image_ID(IDin_name);
-		
+	
+	
 	PForder = data.image[IDfilt].md[0].size[2];
 	NBpix_in = data.image[IDfilt].md[0].size[0];
 	NBpix_out = data.image[IDfilt].md[0].size[1];
+	
+	list_image_ID();
 	
 	if(data.image[IDin].md[0].size[0]*data.image[IDin].md[0].size[1] != NBpix_in)
 		{
