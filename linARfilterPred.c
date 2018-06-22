@@ -842,14 +842,14 @@ long LINARFILTERPRED_Build_LinPredictor(
 	if( (IDv = variable_ID("_SVD_s")) != -1)
 	{
 		PSINV_s = data.variable[IDv].value.f;
-		printf("PSINV_s = %d\n", PSINV_s);
+		printf("PSINV_s = %f\n", PSINV_s);
 	}
 
 	float PSINV_tol = 1.0;
 	if( (IDv = variable_ID("_SVD_tol")) != -1)
 	{
 		PSINV_tol = data.variable[IDv].value.f;
-		printf("PSINV_tol = %d\n", PSINV_tol);
+		printf("PSINV_tol = %f\n", PSINV_tol);
 	}
 
 
@@ -1371,6 +1371,15 @@ long LINARFILTERPRED_Build_LinPredictor(
 		
 		
 		
+		if(LOOPmode==1)
+		{
+			data.image[IDoutPF2Draw].md[0].write = 1;
+			memcpy(data.image[IDoutPF2Draw].array.F, data.image[IDoutPF2Dn].array.F, sizeof(float)*NBpixout*NBpixin*PForder);
+			COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2Draw, -1);
+			data.image[IDoutPF2Draw].md[0].cnt0++;
+			data.image[IDoutPF2Draw].md[0].write = 0;
+		}
+		
 		// Mix current PF with last one
 		data.image[IDoutPF2D].md[0].write = 1;
 		if(LOOPmode==0)
@@ -1379,7 +1388,7 @@ long LINARFILTERPRED_Build_LinPredictor(
 			save_fits(IDoutPF_name, "!_outPF.fits");
 		}
 		else
-		{
+		{			
 			printf("Mixing PF matrix with gain = %f ....", gain);
 			fflush(stdout);
 			for(PFpix=0; PFpix<NBpixout; PFpix++)
