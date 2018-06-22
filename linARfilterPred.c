@@ -781,7 +781,9 @@ long LINARFILTERPRED_Build_LinPredictor(
     float val, val0;
     long ind1;
     int ret;
-    long IDoutPF2D;
+    long IDoutPF2D;     // averaged with previous filters
+    long IDoutPF2Draw;  // individual filter
+    char IDoutPF_name_raw[200];
   //  long IDoutPF3D;
   //  char IDoutPF_name3D[500];
 
@@ -1310,9 +1312,13 @@ long LINARFILTERPRED_Build_LinPredictor(
                 imsizearray = (uint32_t*) malloc(sizeof(uint32_t)*2);
                 imsizearray[0] = NBpixin*PForder;
                 imsizearray[1] = NBpixout;
+                sprintf(IDoutPF_name_raw, "%s_raw", IDoutPF_name);
+                
                 IDoutPF2D = create_image_ID(IDoutPF_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1);
+                IDoutPF2Draw = create_image_ID(IDoutPF_name_raw, 2, imsizearray, _DATATYPE_FLOAT, 1, 1);
                 free(imsizearray);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name, -1);
+                COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
             }
             else
                 IDoutPF2D = image_ID(IDoutPF_name);
@@ -1380,8 +1386,8 @@ long LINARFILTERPRED_Build_LinPredictor(
 				for(pix=0; pix<NBpixin; pix++)
 					for(dt=0; dt<PForder; dt++)
 					{
-					val0 = data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
-					val = data.image[IDoutPF2Dn].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];
+					val0 = data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];  // Previous
+					val = data.image[IDoutPF2Dn].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix];  // New
 					data.image[IDoutPF2D].array.F[PFpix*(PForder*NBpixin) + dt*NBpixin + pix] = (1.0-gain)*val0 + gain*val;
 					}
 			printf(" done\n");
