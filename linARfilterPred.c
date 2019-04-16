@@ -648,54 +648,50 @@ long LINARFILTERPRED_SelectBlock(
 
 
 /** @brief Expand 2D image/matrix in X direction by repeat and shift
- * 
- */ 
+ *
+ */
 long linARfilterPred_repeat_shift_X(
-	const char *IDin_name, 
-	long NBstep, 
-	const char *IDout_name
-	)
-{
-	long IDin;
-	long xsize, ysize;
-	
-	long IDout;
-	long xsizeout, ysizeout;
-	
-	
-	uint32_t *imsizeout;
-	
-	
-	IDin = image_ID(IDin_name);
-	xsize = data.image[IDin].md[0].size[0];
-	ysize = data.image[IDin].md[0].size[1];
-	xsizeout = xsize * NBstep;
-	ysizeout = ysize - NBstep;
-	
-	imsizeout = (uint32_t*) malloc(sizeof(uint32_t)*2);
-	imsizeout[0] = xsizeout;
-	imsizeout[1] = ysizeout;
-	IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0);
-	free(imsizeout);
+    const char *IDin_name,
+    long NBstep,
+    const char *IDout_name
+) {
+    long IDin;
+    long xsize, ysize;
 
-	uint32_t ii, jj, jjout;
-	
-	long step;
-	for(step=0; step<NBstep; step++)
-	{
-		uint32_t ii, jj, jjout;
-		for(ii=0; ii<xsize; ii++)
-		{
-			for(jjout=0; jjout<ysize-NBstep;jjout++)
-			{
-				data.image[IDout].array.F[jjout*xsizeout + step*xsize+ii] = data.image[IDin].array.F[(jjout+NBstep-step-1)*xsize + ii];
-			}
-		}
-			
-	}
-	
-	
-	return IDout;
+    long IDout;
+    long xsizeout, ysizeout;
+
+
+    uint32_t *imsizeout;
+
+
+    IDin = image_ID(IDin_name);
+    xsize = data.image[IDin].md[0].size[0];
+    ysize = data.image[IDin].md[0].size[1];
+    xsizeout = xsize * NBstep;
+    ysizeout = ysize - NBstep;
+
+    imsizeout = (uint32_t*) malloc(sizeof(uint32_t)*2);
+    imsizeout[0] = xsizeout;
+    imsizeout[1] = ysizeout;
+    IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0);
+    free(imsizeout);
+
+    uint32_t ii, jj, jjout;
+
+    long step;
+    for(step=0; step<NBstep; step++) {
+        uint32_t ii, jj, jjout;
+        for(ii=0; ii<xsize; ii++) {
+            for(jjout=0; jjout<ysize-NBstep; jjout++) {
+                data.image[IDout].array.F[jjout*xsizeout + step*xsize+ii] = data.image[IDin].array.F[(jjout+NBstep-step-1)*xsize + ii];
+            }
+        }
+
+    }
+
+
+    return IDout;
 }
 
 
