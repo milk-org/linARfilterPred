@@ -1964,8 +1964,13 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     int     *GPUsetPF;
     char     GPUsetfname[200];
     int      gpuindex;
-    //int_fast8_t status;
-    //int_fast8_t GPUstatus[100];
+
+#ifdef HAVE_CUDA
+    int_fast8_t status;
+    int_fast8_t GPUstatus[100];
+    int GPUMATMULTCONFindex = 2;
+#endif
+
     FILE    *fp;
 
     //time_t t;
@@ -1996,7 +2001,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     long IDmasterout;
     char imname[200];
 
-    //int GPUMATMULTCONFindex = 2;
+
 
 
 
