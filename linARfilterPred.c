@@ -557,7 +557,9 @@ long LINARFILTERPRED_LoadASCIIfiles(
             fflush(stdout);
             fp = fopen(fname, "r");
             //linelen =
-            getline(&linebuf, &linesiz, fp);
+            if(getline(&linebuf, &linesiz, fp) == -1) {
+				printERROR(__FILE__,__func__,__LINE__, "getline error");
+			}
             fclose(fp);
             NBvarin[NBfiles] = NBwords(linebuf)-1;
             free(linebuf);
@@ -608,7 +610,10 @@ long LINARFILTERPRED_LoadASCIIfiles(
 		}
 			
 
-        fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]);
+        if(fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]) != 1) {
+			printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+		}
+        
         for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++) {
             if(fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]) != 1) {
 				printERROR(__FILE__,__func__,__LINE__, "fscanf error");
@@ -1459,7 +1464,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
 
 
-        system("mkdir -p pixfilters");
+        if(system("mkdir -p pixfilters") != 0) {
+			printERROR(__FILE__,__func__,__LINE__, "system() returns non-zero value");
+		}
 
         // 3D FILTER MATRIX - contains all pixels
         // axis 0 [ii] : input mode
