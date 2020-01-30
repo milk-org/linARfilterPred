@@ -503,185 +503,205 @@ int NBwords(
 */
 
 long LINARFILTERPRED_LoadASCIIfiles(
-	double      tstart, 
-	double      dt, 
-	long        NBpt, 
-	long        NBfr, 
-	const char *IDoutname
+    double      tstart,
+    double      dt,
+    long        NBpt,
+    long        NBfr,
+    const char *IDoutname
 )
 {
-	FILE   *fp;
-	long    NBfiles;
-	double  runtime;
-	char    fname[200];
-	struct stat fstat;
-	int     fOK;
-	long    NBvarin[200];
-	long    fcnt;
-	FILE   *fparray[200];
-	long    kk;
-	size_t  linesiz=0;
-	char   *linebuf=0;
-	//ssize_t linelen=0;
-	//int     ret;
-	long    vcnt;
-	double  ftime0[200];
-	double  var0[200][200];
-	double  ftime1[200];
-	double  var1[200][200];
-	double  varC[200][200];
-	float   alpha;
-	long    nbvar;
-	long    fr;
-	char    imoutname[200];
-	FILE   *fpout;
-	imageID IDout[200];
-	//int     HPfilt = 1; // high pass filter
-	float   HPgain = 0.005;
-	
-	long ii;
-	long kkpt, kkfr;
-	
+    FILE   *fp;
+    long    NBfiles;
+    double  runtime;
+    char    fname[200];
+    struct stat fstat;
+    int     fOK;
+    long    NBvarin[200];
+    long    fcnt;
+    FILE   *fparray[200];
+    long    kk;
+    size_t  linesiz=0;
+    char   *linebuf=0;
+    //ssize_t linelen=0;
+    //int     ret;
+    long    vcnt;
+    double  ftime0[200];
+    double  var0[200][200];
+    double  ftime1[200];
+    double  var1[200][200];
+    double  varC[200][200];
+    float   alpha;
+    long    nbvar;
+    long    fr;
+    char    imoutname[200];
+    FILE   *fpout;
+    imageID IDout[200];
+    //int     HPfilt = 1; // high pass filter
+    float   HPgain = 0.005;
 
-	runtime = tstart;
-	
-	fOK = 1;
-	NBfiles = 0;
-	nbvar = 0;
-	while (fOK == 1)
-	{
-		sprintf(fname, "seq%03ld.dat", NBfiles);
-		if( stat (fname, &fstat) == 0 )
-		{
-			printf("Found file %s\n", fname);
-			fflush(stdout);
-			fp = fopen(fname, "r");
-			//linelen = 
-			getline(&linebuf, &linesiz, fp);
-			fclose(fp);  
-			NBvarin[NBfiles] = NBwords(linebuf)-1;
-			free(linebuf);
-			linebuf = NULL;
-			printf("   NB variables = %ld\n", NBvarin[NBfiles]);
-			nbvar += NBvarin[NBfiles];
-			NBfiles++;
+    long ii;
+    long kkpt, kkfr;
+
+
+    runtime = tstart;
+
+    fOK = 1;
+    NBfiles = 0;
+    nbvar = 0;
+    while (fOK == 1)
+    {
+        sprintf(fname, "seq%03ld.dat", NBfiles);
+        if( stat (fname, &fstat) == 0 )
+        {
+            printf("Found file %s\n", fname);
+            fflush(stdout);
+            fp = fopen(fname, "r");
+            //linelen =
+            getline(&linebuf, &linesiz, fp);
+            fclose(fp);
+            NBvarin[NBfiles] = NBwords(linebuf)-1;
+            free(linebuf);
+            linebuf = NULL;
+            printf("   NB variables = %ld\n", NBvarin[NBfiles]);
+            nbvar += NBvarin[NBfiles];
+            NBfiles++;
+        }
+        else
+        {
+            printf("No more files\n");
+            fflush(stdout);
+            fOK = 0;
+        }
+    }
+    printf("NBfiles = %ld\n", NBfiles);
+
+
+
+    for(fcnt=0; fcnt<NBfiles; fcnt++)
+    {
+        sprintf(fname, "seq%03ld.dat", fcnt);
+        printf("   %03ld  OPENING FILE %s\n", fcnt, fname);
+        fflush(stdout);
+        fparray[fcnt] = fopen(fname, "r");
+    }
+
+
+
+    kk = 0; // time
+    runtime = tstart;
+
+
+    for(fcnt=0; fcnt<NBfiles; fcnt++)
+    {       
+        if(fscanf(fparray[fcnt], "%lf", &ftime0[fcnt]) != 1) {
+            printERROR(__FILE__,__func__,__LINE__, "fscanf error");            
+        }
+
+
+        for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++) {            
+            if(fscanf(fparray[fcnt], "%lf", &var0[fcnt][vcnt]) != 1) {
+                printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+            }
+        }
+        if(fscanf(fparray[fcnt], "\n") != 0) {
+			printERROR(__FILE__,__func__,__LINE__, "fscanf error");
 		}
-		else
-		{
-			printf("No more files\n");
-			fflush(stdout);
-			fOK = 0;
-		}
-	}
-	printf("NBfiles = %ld\n", NBfiles);
-	
-	
-	
-	for(fcnt=0;fcnt<NBfiles;fcnt++)
-		{
-			sprintf(fname, "seq%03ld.dat", fcnt);
-			printf("   %03ld  OPENING FILE %s\n", fcnt, fname);
-			fflush(stdout);
-			fparray[fcnt] = fopen(fname, "r");
-		}
-	
-	
-	
-	kk = 0; // time
-	runtime = tstart;
-	
-
-	for(fcnt=0;fcnt<NBfiles;fcnt++)
-		{
-			fscanf(fparray[fcnt], "%lf", &ftime0[fcnt]);
-			for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++) {
-				fscanf(fparray[fcnt], "%lf", &var0[fcnt][vcnt]);
-			}
-			fscanf(fparray[fcnt], "\n");
-
-			fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]);
-			for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++) {
-				fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]);
-			}
-			fscanf(fparray[fcnt], "\n");
-		
-	
-	
-		printf("FILE %ld :  \n", fcnt);
-		printf(" time :    %20f  %20f\n", ftime0[fcnt], ftime1[fcnt]);
-		fflush(stdout);
-		
-		for(vcnt=0; vcnt < NBvarin[fcnt]; vcnt++)
-			{
-				printf("    variable %3ld   :   %20f  %20f\n", vcnt, var0[fcnt][vcnt], var1[fcnt][vcnt]);
-				varC[fcnt][vcnt] = var0[fcnt][vcnt];
-			}
-		printf("\n");
-	}
-	
-	
-	for(fr=0; fr<NBfr; fr++)
-	{
-		sprintf(imoutname, "%s_%03ld", IDoutname, fr);
-		IDout[fr] = create_3Dimage_ID(imoutname, nbvar, 1, NBpt);
-	}
-	
-	fpout = fopen("out.txt", "w");
-
-	kk = 0;
-	kkpt = 0;
-	kkfr = 0;
-	while(kkfr<NBfr)
-		{
-			fprintf(fpout, "%20f", runtime);
 			
-			ii = 0;
-			for(fcnt=0;fcnt<NBfiles;fcnt++)
-				{
-					while(ftime1[fcnt]<runtime)
-					{
-						ftime0[fcnt] = ftime1[fcnt];
-						for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++)
-							var0[fcnt][vcnt] = var1[fcnt][vcnt];
 
-						fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]);
-						for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++)
-							fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]);
-						fscanf(fparray[fcnt], "\n");
+        fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]);
+        for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++) {
+            if(fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]) != 1) {
+				printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+			}
+        }
+        if(fscanf(fparray[fcnt], "\n") != 0) {
+			printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+		}
+
+
+
+        printf("FILE %ld :  \n", fcnt);
+        printf(" time :    %20f  %20f\n", ftime0[fcnt], ftime1[fcnt]);
+        fflush(stdout);
+
+        for(vcnt=0; vcnt < NBvarin[fcnt]; vcnt++)
+        {
+            printf("    variable %3ld   :   %20f  %20f\n", vcnt, var0[fcnt][vcnt], var1[fcnt][vcnt]);
+            varC[fcnt][vcnt] = var0[fcnt][vcnt];
+        }
+        printf("\n");
+    }
+
+
+    for(fr=0; fr<NBfr; fr++)
+    {
+        sprintf(imoutname, "%s_%03ld", IDoutname, fr);
+        IDout[fr] = create_3Dimage_ID(imoutname, nbvar, 1, NBpt);
+    }
+
+    fpout = fopen("out.txt", "w");
+
+    kk = 0;
+    kkpt = 0;
+    kkfr = 0;
+    while(kkfr<NBfr)
+    {
+        fprintf(fpout, "%20f", runtime);
+
+        ii = 0;
+        for(fcnt=0; fcnt<NBfiles; fcnt++)
+        {
+            while(ftime1[fcnt]<runtime)
+            {
+                ftime0[fcnt] = ftime1[fcnt];
+                for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++)
+                    var0[fcnt][vcnt] = var1[fcnt][vcnt];
+
+                if(fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]) != 1) {
+					printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+				}
+                for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++){
+                    if(fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]) != 1) {
+						printERROR(__FILE__,__func__,__LINE__, "fscanf error");
 					}
-					if(kk==0)
-						for(vcnt=0; vcnt < NBvarin[fcnt]; vcnt++)
-							varC[fcnt][vcnt] = var0[fcnt][vcnt];
-							
-					alpha = (runtime - ftime0[fcnt]) / (ftime1[fcnt] - ftime0[fcnt]);
-					for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++)
-						{
-							fprintf(fpout, " %20f", (1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt] - varC[fcnt][vcnt]);					
-							varC[fcnt][vcnt] = (1.0-HPgain)*varC[fcnt][vcnt] + HPgain * ((1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt]);
+				}
+                if(fscanf(fparray[fcnt], "\n") != 0) {
+					printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+				}
+            }
+            if(kk==0)
+                for(vcnt=0; vcnt < NBvarin[fcnt]; vcnt++)
+                    varC[fcnt][vcnt] = var0[fcnt][vcnt];
 
-							data.image[IDout[kkfr]].array.F[kkpt*nbvar + ii] = (1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt] - varC[fcnt][vcnt];
-							ii++;
-						}
-				}
-			
-			fprintf(fpout, "\n");
-			
-			kk++;
-			kkpt++;
-			runtime += dt;
-			if(kkpt == NBpt)
-				{
-					kkpt = 0;
-					kkfr++;
-				}
-		}
-	
-	fclose(fpout);
-	
-	for(fcnt=0;fcnt<NBfiles;fcnt++)
-		fclose(fparray[fcnt]);
-	
-	return(NBfiles);
+            alpha = (runtime - ftime0[fcnt]) / (ftime1[fcnt] - ftime0[fcnt]);
+            for(vcnt=0; vcnt<NBvarin[fcnt]; vcnt++)
+            {
+                fprintf(fpout, " %20f", (1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt] - varC[fcnt][vcnt]);
+                varC[fcnt][vcnt] = (1.0-HPgain)*varC[fcnt][vcnt] + HPgain * ((1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt]);
+
+                data.image[IDout[kkfr]].array.F[kkpt*nbvar + ii] = (1.0-alpha)*var0[fcnt][vcnt] + alpha*var1[fcnt][vcnt] - varC[fcnt][vcnt];
+                ii++;
+            }
+        }
+
+        fprintf(fpout, "\n");
+
+        kk++;
+        kkpt++;
+        runtime += dt;
+        if(kkpt == NBpt)
+        {
+            kkpt = 0;
+            kkfr++;
+        }
+    }
+
+    fclose(fpout);
+
+    for(fcnt=0; fcnt<NBfiles; fcnt++)
+        fclose(fparray[fcnt]);
+
+    return(NBfiles);
 }
 
 
@@ -2118,7 +2138,9 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
                 printf("ERROR: file %s not found\n", GPUsetfname);
                 exit(0);
             }
-            fscanf(fp, "%d", &GPUsetPF[gpuindex]);
+            if(fscanf(fp, "%d", &GPUsetPF[gpuindex]) != 1) {
+				printERROR(__FILE__,__func__,__LINE__, "fscanf error");
+			}
             fclose(fp);
         }
         printf("USING %d GPUs: ", nbGPU);
