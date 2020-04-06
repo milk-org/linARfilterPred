@@ -4,11 +4,6 @@
  * 
  * Implements Empirical Orthogonal Functions
  * 
- * @author  O. Guyon
- * @date    5 Jul 2017
- *
- * @bug No known bugs. 
- * 
  */
 
 #ifndef _LINARFILTERPRED_H
@@ -16,7 +11,6 @@
 
 
 void __attribute__ ((constructor)) libinit_linARfilterPred();
-errno_t init_linARfilterPred();
 
 
 

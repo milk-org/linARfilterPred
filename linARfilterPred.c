@@ -8,6 +8,31 @@
  */
 
 
+
+/* ================================================================== */
+/* ================================================================== */
+/*            MODULE INFO                                             */
+/* ================================================================== */
+/* ================================================================== */
+
+// module default short name
+// all CLI calls to this module functions will be <shortname>.<funcname>
+// if set to "", then calls use <funcname>
+#define MODULE_SHORTNAME_DEFAULT ""
+
+// Module short description 
+#define MODULE_DESCRIPTION       "Linear auto-regressive predictive filters"
+
+// Application to which module belongs
+#define MODULE_APPLICATION       "milk"
+
+
+
+
+
+
+
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -72,18 +97,27 @@ int clock_gettime(int clk_id, struct timespec *t){
 #include "cudacomp/cudacomp.h"
 #endif
 
-static int INITSTATUS_linARfilterPred = 0;
 
 
 
-// CLI commands
+
+/* ================================================================== */
+/* ================================================================== */
+/*            INITIALIZE LIBRARY                                      */
+/* ================================================================== */
+/* ================================================================== */
+
+// Module initialization macro in CLIcore.h
+// macro argument defines module name for bindings
 //
-// function CLI_checkarg used to check arguments
-// 1: float
-// 2: long
-// 3: string (not image)
-// 4: existing image
-// 5: string
+INIT_MODULE_LIB(linARfilterPred)
+
+
+/* ================================================================== */
+/* ================================================================== */
+/*            COMMAND LINE INTERFACE (CLI) FUNCTIONS                  */
+/* ================================================================== */
+/* ================================================================== */
 
 
 
@@ -305,21 +339,7 @@ errno_t LINARFILTERPRED_PF_RealTimeApply_cli()
 
 
 
-
-void __attribute__ ((constructor)) libinit_linARfilterPred()
-{
-	if ( INITSTATUS_linARfilterPred == 0 )
-	{
-		init_linARfilterPred();
-		RegisterModule(__FILE__, "milk", "Linear auto-regressive predictive filters");
-		INITSTATUS_linARfilterPred = 1;
-	}
-}
-
-
-
-
-errno_t init_linARfilterPred()
+static errno_t init_module_CLI()
 {
     RegisterCLIcommand(
         "pfloadascii",
