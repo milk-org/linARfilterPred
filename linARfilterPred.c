@@ -594,7 +594,7 @@ long LINARFILTERPRED_LoadASCIIfiles(
             //linelen =
             if(getline(&linebuf, &linesiz, fp) == -1)
             {
-                printERROR(__FILE__, __func__, __LINE__, "getline error");
+                PRINT_ERROR("getline error");
             }
             fclose(fp);
             NBvarin[NBfiles] = NBwords(linebuf) - 1;
@@ -633,7 +633,7 @@ long LINARFILTERPRED_LoadASCIIfiles(
     {
         if(fscanf(fparray[fcnt], "%lf", &ftime0[fcnt]) != 1)
         {
-            printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+            PRINT_ERROR("fscanf error");
         }
 
 
@@ -641,30 +641,30 @@ long LINARFILTERPRED_LoadASCIIfiles(
         {
             if(fscanf(fparray[fcnt], "%lf", &var0[fcnt][vcnt]) != 1)
             {
-                printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                PRINT_ERROR("fscanf error");
             }
         }
         if(fscanf(fparray[fcnt], "\n") != 0)
         {
-            printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+            PRINT_ERROR("fscanf error");
         }
 
 
         if(fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]) != 1)
         {
-            printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+            PRINT_ERROR("fscanf error");
         }
 
         for(vcnt = 0; vcnt < NBvarin[fcnt]; vcnt++)
         {
             if(fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]) != 1)
             {
-                printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                PRINT_ERROR("fscanf error");
             }
         }
         if(fscanf(fparray[fcnt], "\n") != 0)
         {
-            printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+            PRINT_ERROR("fscanf error");
         }
 
 
@@ -711,18 +711,18 @@ long LINARFILTERPRED_LoadASCIIfiles(
 
                 if(fscanf(fparray[fcnt], "%lf", &ftime1[fcnt]) != 1)
                 {
-                    printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                    PRINT_ERROR("fscanf error");
                 }
                 for(vcnt = 0; vcnt < NBvarin[fcnt]; vcnt++)
                 {
                     if(fscanf(fparray[fcnt], "%lf", &var1[fcnt][vcnt]) != 1)
                     {
-                        printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                        PRINT_ERROR("fscanf error");
                     }
                 }
                 if(fscanf(fparray[fcnt], "\n") != 0)
                 {
-                    printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                    PRINT_ERROR("fscanf error");
                 }
             }
             if(kk == 0)
@@ -1580,7 +1580,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
         if(system("mkdir -p pixfilters") != 0)
         {
-            printERROR(__FILE__, __func__, __LINE__, "system() returns non-zero value");
+            PRINT_ERROR("system() returns non-zero value");
         }
 
         // 3D FILTER MATRIX - contains all pixels
@@ -2322,7 +2322,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
             }
             if(fscanf(fp, "%d", &GPUsetPF[gpuindex]) != 1)
             {
-                printERROR(__FILE__, __func__, __LINE__, "fscanf error");
+                PRINT_ERROR("fscanf error");
             }
             fclose(fp);
         }
