@@ -1739,10 +1739,10 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         fflush(stdout);
         clock_gettime(CLOCK_REALTIME, &t2);
 
-        tdiff = info_time_diff(t0, t1);
+        tdiff = timespec_diff(t0, t1);
         tdiffv01 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
 
-        tdiff = info_time_diff(t1, t2);
+        tdiff = timespec_diff(t1, t2);
         tdiffv12 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
 
 
