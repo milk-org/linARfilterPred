@@ -23,8 +23,6 @@
 // Module short description
 #define MODULE_DESCRIPTION       "Linear auto-regressive predictive filters"
 
-// Application to which module belongs
-#define MODULE_APPLICATION       "milk"
 
 
 
