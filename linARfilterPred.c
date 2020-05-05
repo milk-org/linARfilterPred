@@ -2150,8 +2150,8 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     int      gpuindex;
 
 #ifdef HAVE_CUDA
-    int_fast8_t status;
-    int_fast8_t GPUstatus[100];
+    int  status;
+    int  GPUstatus[100];
     int GPUMATMULTCONFindex = 2;
 #endif
 
