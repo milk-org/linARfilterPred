@@ -10,7 +10,7 @@ set(INCLUDEFILES
 	${SRCNAME}.h)
 
 
-# DEFAULT SETTINGS 
+# DEFAULT SETTINGS
 # Do not change unless needed
 # =====================================================================
 
@@ -22,7 +22,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/..")
 
 # Library can be compiled from multiple source files
 # Convention: the main souce file is named <libname>.c
-# 
+#
 add_library(${LIBNAME} SHARED ${SOURCEFILES})
 
 
@@ -42,18 +42,9 @@ target_include_directories(${LIBNAME} PUBLIC ${MAGMA_INCLUDE_DIRS})
 set_target_properties(${LIBNAME} PROPERTIES COMPILE_FLAGS "-DHAVE_CUDA -DHAVE_MAGMA")
 endif(USE_MAGMA)
 
+target_link_libraries(${LIBNAME} PRIVATE CLIcore)
 
 
 
 install(TARGETS ${LIBNAME} DESTINATION lib)
 install(FILES ${INCLUDEFILES} DESTINATION include/${SRCNAME})
-
-
-
-
-
-
-
-
-
-
