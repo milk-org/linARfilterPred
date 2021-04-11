@@ -2,6 +2,8 @@
 set(LIBNAME "milklinARfilterPred")
 set(SRCNAME "linARfilterPred")
 
+message("")
+message(" SRCNAME = ${SRCNAME} -> LIBNAME = ${LIBNAME}")
 
 set(SOURCEFILES
 	${SRCNAME}.c)
