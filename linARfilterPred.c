@@ -812,7 +812,7 @@ imageID LINARFILTERPRED_SelectBlock(
     sizearray[0] = NBmodes1;
 
 
-    IDout = create_image_ID(IDout_name, naxis, sizearray, _DATATYPE_FLOAT, 0, 0);
+    IDout = create_image_ID(IDout_name, naxis, sizearray, _DATATYPE_FLOAT, 0, 0, 0);
 
 
     xsize = data.image[IDin].md[0].size[0];
@@ -903,7 +903,7 @@ imageID linARfilterPred_repeat_shift_X(
     imsizeout = (uint32_t *) malloc(sizeof(uint32_t) * 2);
     imsizeout[0] = xsizeout;
     imsizeout[1] = ysizeout;
-    IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0);
+    IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0, 0);
     free(imsizeout);
 
 
@@ -1094,7 +1094,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     imsize = (uint32_t *) malloc(sizeof(uint32_t) * 2);
     imsize[0] = 4;
     imsize[1] = 1;
-    IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0);
+    IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0, 0);
     free(imsize);
 
 
@@ -1587,9 +1587,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(
                 sprintf(IDoutPF_name_raw, "%s_raw", IDoutPF_name);
 
                 IDoutPF2D = create_image_ID(IDoutPF_name, 2, imsizearray, _DATATYPE_FLOAT, 1,
-                                            1);
+                                            1, 0);
                 IDoutPF2Draw = create_image_ID(IDoutPF_name_raw, 2, imsizearray,
-                                               _DATATYPE_FLOAT, 1, 1);
+                                               _DATATYPE_FLOAT, 1, 1, 0);
                 free(imsizearray);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name, -1);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
@@ -1829,7 +1829,7 @@ imageID LINARFILTERPRED_Apply_LinPredictor_RT(
     imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
     imsizearray[0] = NBpix_out;
     imsizearray[1] = 1;
-    IDout = create_image_ID(IDout_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1);
+    IDout = create_image_ID(IDout_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1, 0);
     free(imsizearray);
     COREMOD_MEMORY_image_set_semflush(IDout_name, -1);
     printf("Done\n");
@@ -2056,7 +2056,7 @@ imageID LINARFILTERPRED_PF_updatePFmatrix(
         printf("Creating shared mem image %s  [ %ld  x  %ld ]\n", IDPFM_name,
                (long) sizearray[0], (long) sizearray[1]);
         fflush(stdout);
-        IDPFM = create_image_ID(IDPFM_name, naxis, sizearray, _DATATYPE_FLOAT, 1, 0);
+        IDPFM = create_image_ID(IDPFM_name, naxis, sizearray, _DATATYPE_FLOAT, 1, 0, 0);
     }
     free(sizearray);
 
@@ -2281,7 +2281,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     if(IDPFout == -1)
     {
         IDPFout = create_image_ID(IDPFout_name, naxis, sizearray, _DATATYPE_FLOAT, 1,
-                                  0);
+                                  0, 0);
     }
     free(sizearray);
 
