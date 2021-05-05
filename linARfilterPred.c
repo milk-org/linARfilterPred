@@ -480,19 +480,19 @@ int NBwords(
 
     do switch(*it)
         {
-            case '\0':
-            case ' ':
-            case '\t':
-            case '\n':
-            case '\r':
-                if(inword)
-                {
-                    inword = 0;
-                    counted++;
-                }
-                break;
-            default:
-                inword = 1;
+        case '\0':
+        case ' ':
+        case '\t':
+        case '\n':
+        case '\r':
+            if(inword)
+            {
+                inword = 0;
+                counted++;
+            }
+            break;
+        default:
+            inword = 1;
         }
     while(*it++);
 
@@ -804,6 +804,10 @@ imageID LINARFILTERPRED_SelectBlock(
 
 
     sizearray = (uint32_t *) malloc(sizeof(uint32_t) * naxis);
+    if(sizearray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     for(uint8_t axis = 0; axis < naxis; axis++)
     {
@@ -901,6 +905,11 @@ imageID linARfilterPred_repeat_shift_X(
     ysizeout = ysize - NBstep;
 
     imsizeout = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+    if(imsizeout == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     imsizeout[0] = xsizeout;
     imsizeout[1] = ysizeout;
     IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0, 0);
@@ -1092,6 +1101,10 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
     sprintf(imname, "%s_PFparam", IDoutPF_name);
     imsize = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+    if(imsize == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
     imsize[0] = 4;
     imsize[1] = 1;
     IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0, 0);
@@ -1147,35 +1160,35 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     switch(data.image[IDin].md[0].naxis)
     {
 
-        case 2 :
-            /// If 2D image:
-            /// - xysize <- size[0] is number of variables
-            /// - nbspl <- size[1] is number of samples
-            nbspl = data.image[IDin].md[0].size[1];
-            xsize = data.image[IDin].md[0].size[0];
-            ysize = 1;
-            // copy of image to avoid input change during computation
-            IDincp = create_2Dimage_ID("PFin_cp", data.image[IDin].md[0].size[0],
-                                       data.image[IDin].md[0].size[1]);
-            inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1];
-            break;
+    case 2 :
+        /// If 2D image:
+        /// - xysize <- size[0] is number of variables
+        /// - nbspl <- size[1] is number of samples
+        nbspl = data.image[IDin].md[0].size[1];
+        xsize = data.image[IDin].md[0].size[0];
+        ysize = 1;
+        // copy of image to avoid input change during computation
+        IDincp = create_2Dimage_ID("PFin_cp", data.image[IDin].md[0].size[0],
+                                   data.image[IDin].md[0].size[1]);
+        inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1];
+        break;
 
-        case 3 :
-            /// If 3D image
-            /// - xysize <- size[0] * size[1] is number of variables
-            /// - nbspl <- size[2] is number of samples
-            nbspl = data.image[IDin].md[0].size[2];
-            xsize = data.image[IDin].md[0].size[0];
-            ysize = data.image[IDin].md[0].size[1];
-            IDincp = create_3Dimage_ID("PFin_copy", data.image[IDin].md[0].size[0],
-                                       data.image[IDin].md[0].size[1], data.image[IDin].md[0].size[2]);
-            inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1] *
-                       data.image[IDin].md[0].size[2];
-            break;
+    case 3 :
+        /// If 3D image
+        /// - xysize <- size[0] * size[1] is number of variables
+        /// - nbspl <- size[2] is number of samples
+        nbspl = data.image[IDin].md[0].size[2];
+        xsize = data.image[IDin].md[0].size[0];
+        ysize = data.image[IDin].md[0].size[1];
+        IDincp = create_3Dimage_ID("PFin_copy", data.image[IDin].md[0].size[0],
+                                   data.image[IDin].md[0].size[1], data.image[IDin].md[0].size[2]);
+        inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1] *
+                   data.image[IDin].md[0].size[2];
+        break;
 
-        default :
-            printf("Invalid image size\n");
-            break;
+    default :
+        printf("Invalid image size\n");
+        break;
     }
     xysize = xsize * ysize;
     printf("xysize = %ld\n", xysize);
@@ -1187,9 +1200,28 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     /// - ave_inarray : time averaged value, useful because the predictive filter often needs average to be zero, so we will remove it
 
     pixarray_x = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(pixarray_x == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     pixarray_y = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(pixarray_y == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     pixarray_xy = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(pixarray_xy == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     ave_inarray = (double *) malloc(sizeof(double) * xsize * ysize);
+    if(ave_inarray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     /// ### Select input variables from mask (optional)
     /// If image "inmask" exists, use it to select which variables are active.
@@ -1241,8 +1273,22 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     /// - outpixarray_xy : combined output index (avoids re-computing index frequently)
 
     outpixarray_x = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(outpixarray_x == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     outpixarray_y = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(outpixarray_y == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     outpixarray_xy = (long *) malloc(sizeof(long) * xsize * ysize);
+    if(outpixarray_xy == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     IDoutmask = image_ID("outmask");
     if(IDoutmask == -1)
@@ -1582,6 +1628,11 @@ imageID LINARFILTERPRED_Build_LinPredictor(
             if(iter == 0) // create 2D and 3D filters as shared memory
             {
                 imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+                if(imsizearray == NULL) {
+                    PRINT_ERROR("malloc returns NULL pointer");
+                    abort();
+                }
+
                 imsizearray[0] = NBpixin * PForder;
                 imsizearray[1] = NBpixout;
                 sprintf(IDoutPF_name_raw, "%s_raw", IDoutPF_name);
@@ -1827,6 +1878,11 @@ imageID LINARFILTERPRED_Apply_LinPredictor_RT(
     printf("Create prediction output %s\n", IDout_name);
     fflush(stdout);
     imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+    if(imsizearray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     imsizearray[0] = NBpix_out;
     imsizearray[1] = 1;
     IDout = create_image_ID(IDout_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1, 0);
@@ -1836,7 +1892,16 @@ imageID LINARFILTERPRED_Apply_LinPredictor_RT(
     fflush(stdout);
 
     inarray = (float *) malloc(sizeof(float) * NBpix_in * PForder);
+    if(inarray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     outarray = (float *) malloc(sizeof(float) * NBpix_out);
+    if(outarray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
 
     while(sem_trywait(data.image[IDin].semptr[semtrig]) == 0) {}
@@ -1950,25 +2015,25 @@ imageID LINARFILTERPRED_Apply_LinPredictor(
     switch(data.image[IDin].md[0].naxis)
     {
 
-        case 2 :
-            nbspl = data.image[IDin].md[0].size[1];
-            xsize = data.image[IDin].md[0].size[0];
-            ysize = 1;
-            IDout = create_2Dimage_ID(IDout_name, xsize, nbspl);
-            IDoutf = create_2Dimage_ID("outf", xsize, nbspl);
-            break;
+    case 2 :
+        nbspl = data.image[IDin].md[0].size[1];
+        xsize = data.image[IDin].md[0].size[0];
+        ysize = 1;
+        IDout = create_2Dimage_ID(IDout_name, xsize, nbspl);
+        IDoutf = create_2Dimage_ID("outf", xsize, nbspl);
+        break;
 
-        case 3 :
-            nbspl = data.image[IDin].md[0].size[2];
-            xsize = data.image[IDin].md[0].size[0];
-            ysize = data.image[IDin].md[0].size[1];
-            IDout = create_3Dimage_ID(IDout_name, xsize, ysize, nbspl);
-            IDoutf = create_3Dimage_ID("outf", xsize, ysize, nbspl);
-            break;
+    case 3 :
+        nbspl = data.image[IDin].md[0].size[2];
+        xsize = data.image[IDin].md[0].size[0];
+        ysize = data.image[IDin].md[0].size[1];
+        IDout = create_3Dimage_ID(IDout_name, xsize, ysize, nbspl);
+        IDoutf = create_3Dimage_ID("outf", xsize, ysize, nbspl);
+        break;
 
-        default :
-            printf("Invalid image size\n");
-            break;
+    default :
+        printf("Invalid image size\n");
+        break;
     }
     xysize = xsize * ysize;
 
@@ -2045,6 +2110,11 @@ imageID LINARFILTERPRED_PF_updatePFmatrix(
     NBtstep = data.image[IDPF].md[0].size[2];
 
     sizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+    if(sizearray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     sizearray[0] = NBmode * NBtstep;
     sizearray[1] = NBmode;
     naxis = 2;
@@ -2193,6 +2263,11 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
             }
 
         inmaskindex = (long *) malloc(sizeof(long) * NBinmaskpix);
+        if(inmaskindex == NULL) {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
         NBinmaskpix = 0;
         for(uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
             if(data.image[IDinmask].array.F[ii] > 0.5)
@@ -2211,7 +2286,13 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
         {
             data.image[IDinmask].array.F[ii] = 1.0;
         }
+
         inmaskindex = (long *) malloc(sizeof(long) * NBinmaskpix);
+        if(inmaskindex == NULL) {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
         for(uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
         {
             inmaskindex[NBinmaskpix] = ii;
@@ -2252,6 +2333,11 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
             }
 
         outmaskindex = (long *) malloc(sizeof(long) * NBoutmaskpix);
+        if(outmaskindex == NULL) {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
         NBoutmaskpix = 0;
         for(uint32_t ii = 0; ii < data.image[IDoutmask].md[0].size[0]; ii++)
             if(data.image[IDoutmask].array.F[ii] > 0.5)
@@ -2273,6 +2359,11 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     IDINbuff = create_2Dimage_ID("INbuffer", NBmodeIN, NBPFstep);
 
     sizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+    if(sizearray == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     sizearray[0] = NBmodeOUT;
     sizearray[1] = 1;
     naxis = 2;
@@ -2289,6 +2380,10 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     if(nbGPU > 0)
     {
         GPUsetPF = (int *) malloc(sizeof(int) * nbGPU);
+        if(GPUsetPF == NULL) {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
 
         for(gpuindex = 0; gpuindex < nbGPU; gpuindex++)
         {
@@ -2684,7 +2779,12 @@ float LINARFILTERPRED_ScanGain(
     {
         nbvar *= data.image[IDin].md[0].size[axis];
     }
+
     errval = (double *) malloc(sizeof(double) * nbvar);
+    if(errval == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     nbstep = data.image[IDin].md[0].size[naxis - 1];
 
@@ -2707,11 +2807,28 @@ float LINARFILTERPRED_ScanGain(
 
 
     actval_array = (float *) malloc(sizeof(float) * nbstep);
-
+    if(actval_array == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     optgain = (float *) malloc(sizeof(float) * nbvar);
+    if(optgain == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     optres = (float *) malloc(sizeof(float) * nbvar);
+    if(optres == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
+
     res0 = (float *) malloc(sizeof(float) * nbvar);
+    if(res0 == NULL) {
+        PRINT_ERROR("malloc returns NULL pointer");
+        abort();
+    }
 
     sprintf(fname, "gainscan.txt");
 
