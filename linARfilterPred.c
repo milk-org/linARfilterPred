@@ -1701,7 +1701,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         {
             printf("------------------- Using GPU-computed PF matrix\n");
         }
-        delete_image_ID("PFfmdat");
+        delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
 
 
 
