@@ -816,7 +816,7 @@ imageID LINARFILTERPRED_SelectBlock(
     sizearray[0] = NBmodes1;
 
 
-    IDout = create_image_ID(IDout_name, naxis, sizearray, _DATATYPE_FLOAT, 0, 0, 0);
+    create_image_ID(IDout_name, naxis, sizearray, _DATATYPE_FLOAT, 0, 0, 0, &IDout);
 
 
     xsize = data.image[IDin].md[0].size[0];
@@ -912,7 +912,7 @@ imageID linARfilterPred_repeat_shift_X(
 
     imsizeout[0] = xsizeout;
     imsizeout[1] = ysizeout;
-    IDout = create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0, 0);
+    create_image_ID(IDout_name, 2, imsizeout, _DATATYPE_FLOAT, 1, 0, 0, &IDout);
     free(imsizeout);
 
 
@@ -1107,7 +1107,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     }
     imsize[0] = 4;
     imsize[1] = 1;
-    IDPFparam = create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0, 0);
+    create_image_ID(imname, 2, imsize, _DATATYPE_FLOAT, 1, 0, 0, &IDPFparam);
     free(imsize);
 
 
@@ -1572,8 +1572,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
 #ifdef HAVE_MAGMA
         printf("Using magma ...\n");
-        CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run,
-                                                NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, PSINV_s, PSINV_tol, testmode);
+        CUDACOMP_magma_compute_SVDpseudoInverse(
+            "PFmatD", "PFmatC", SVDeps_run,
+            NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, PSINV_s, PSINV_tol, testmode, 64);
 #else
         printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes,
@@ -1637,10 +1638,10 @@ imageID LINARFILTERPRED_Build_LinPredictor(
                 imsizearray[1] = NBpixout;
                 sprintf(IDoutPF_name_raw, "%s_raw", IDoutPF_name);
 
-                IDoutPF2D = create_image_ID(IDoutPF_name, 2, imsizearray, _DATATYPE_FLOAT, 1,
-                                            1, 0);
-                IDoutPF2Draw = create_image_ID(IDoutPF_name_raw, 2, imsizearray,
-                                               _DATATYPE_FLOAT, 1, 1, 0);
+                create_image_ID(IDoutPF_name, 2, imsizearray, _DATATYPE_FLOAT, 1,
+                                1, 0, &IDoutPF2D);
+                create_image_ID(IDoutPF_name_raw, 2, imsizearray,
+                                _DATATYPE_FLOAT, 1, 1, 0, &IDoutPF2Draw);
                 free(imsizearray);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name, -1);
                 COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
@@ -1885,7 +1886,7 @@ imageID LINARFILTERPRED_Apply_LinPredictor_RT(
 
     imsizearray[0] = NBpix_out;
     imsizearray[1] = 1;
-    IDout = create_image_ID(IDout_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1, 0);
+    create_image_ID(IDout_name, 2, imsizearray, _DATATYPE_FLOAT, 1, 1, 0, &IDout);
     free(imsizearray);
     COREMOD_MEMORY_image_set_semflush(IDout_name, -1);
     printf("Done\n");
@@ -2126,7 +2127,7 @@ imageID LINARFILTERPRED_PF_updatePFmatrix(
         printf("Creating shared mem image %s  [ %ld  x  %ld ]\n", IDPFM_name,
                (long) sizearray[0], (long) sizearray[1]);
         fflush(stdout);
-        IDPFM = create_image_ID(IDPFM_name, naxis, sizearray, _DATATYPE_FLOAT, 1, 0, 0);
+        create_image_ID(IDPFM_name, naxis, sizearray, _DATATYPE_FLOAT, 1, 0, 0, &IDPFM);
     }
     free(sizearray);
 
@@ -2371,8 +2372,8 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
 
     if(IDPFout == -1)
     {
-        IDPFout = create_image_ID(IDPFout_name, naxis, sizearray, _DATATYPE_FLOAT, 1,
-                                  0, 0);
+        create_image_ID(IDPFout_name, naxis, sizearray, _DATATYPE_FLOAT, 1,
+                        0, 0, &IDPFout);
     }
     free(sizearray);
 
