@@ -1586,7 +1586,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 #else
         printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes,
-                                        "PF_VTmat");
+                                        "PF_VTmat", NULL);
 #endif
 
 
