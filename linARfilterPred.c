@@ -1582,7 +1582,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         printf("Using magma ...\n");
         CUDACOMP_magma_compute_SVDpseudoInverse(
             "PFmatD", "PFmatC", SVDeps_run,
-            NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, PSINV_s, PSINV_tol, testmode, 64);
+            NB_SVD_Modes, "PF_VTmat", LOOPmode, PSINV_MODE, PSINV_s, PSINV_tol, testmode, 64, NULL);
 #else
         printf("Not using magma ...\n");
         linopt_compute_SVDpseudoInverse("PFmatD", "PFmatC", SVDeps_run, NB_SVD_Modes,
