@@ -665,7 +665,7 @@ long LINARFILTERPRED_LoadASCIIfiles(
     for(fr = 0; fr < NBfr; fr++)
     {
         sprintf(imoutname, "%s_%03ld", IDoutname, fr);
-        IDout[fr] = create_3Dimage_ID(imoutname, nbvar, 1, NBpt);
+        create_3Dimage_ID(imoutname, nbvar, 1, NBpt, &(IDout[fr]));
     }
 
     fpout = fopen("out.txt", "w");
@@ -1168,8 +1168,10 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         xsize = data.image[IDin].md[0].size[0];
         ysize = 1;
         // copy of image to avoid input change during computation
-        IDincp = create_2Dimage_ID("PFin_cp", data.image[IDin].md[0].size[0],
-                                   data.image[IDin].md[0].size[1]);
+        create_2Dimage_ID("PFin_cp",
+                          data.image[IDin].md[0].size[0],
+                          data.image[IDin].md[0].size[1],
+                          &IDincp);
         inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1];
         break;
 
@@ -1180,8 +1182,12 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         nbspl = data.image[IDin].md[0].size[2];
         xsize = data.image[IDin].md[0].size[0];
         ysize = data.image[IDin].md[0].size[1];
-        IDincp = create_3Dimage_ID("PFin_copy", data.image[IDin].md[0].size[0],
-                                   data.image[IDin].md[0].size[1], data.image[IDin].md[0].size[2]);
+        create_3Dimage_ID("PFin_copy",
+                          data.image[IDin].md[0].size[0],
+                          data.image[IDin].md[0].size[1],
+                          data.image[IDin].md[0].size[2],
+                          &IDincp);
+
         inNBelem = data.image[IDin].md[0].size[0] * data.image[IDin].md[0].size[1] *
                    data.image[IDin].md[0].size[2];
         break;
@@ -1360,13 +1366,13 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     {
         printf("NBmvec   = %ld  -> %ld \n", NBmvec, NBmvec);
         NBmvec1 = NBmvec;
-        IDmatA = create_2Dimage_ID("PFmatD", NBmvec, mvecsize);
+        create_2Dimage_ID("PFmatD", NBmvec, mvecsize, &IDmatA);
     }
     else // with regularization
     {
         printf("NBmvec   = %ld  -> %ld \n", NBmvec, NBmvec + mvecsize);
         NBmvec1 = NBmvec + mvecsize;
-        IDmatA = create_2Dimage_ID("PFmatD", NBmvec + mvecsize, mvecsize);
+        create_2Dimage_ID("PFmatD", NBmvec + mvecsize, mvecsize, &IDmatA);
     }
 
     IDmatA = image_ID("PFmatD");
@@ -1549,7 +1555,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
 
         // Assemble future measured data matrix
-        long IDfm = create_2Dimage_ID("PFfmdat", NBmvec, NBpixout);
+        imageID IDfm;
+        create_2Dimage_ID("PFfmdat", NBmvec, NBpixout, &IDfm);
+
         alpha = PFlag_run - ((long) PFlag_run);
         for(PFpix = 0; PFpix < NBpixout; PFpix++)
             for(m = 0; m < NBmvec; m++)
@@ -1621,7 +1629,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
         if(LOOPmode == 0)
         {
-            IDoutPF2D = create_2Dimage_ID(IDoutPF_name, NBpixin * PForder, NBpixout);
+            create_2Dimage_ID(IDoutPF_name, NBpixin * PForder, NBpixout, &IDoutPF2D);
         }
 
         else
@@ -1674,7 +1682,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         {
             printf("------------------- CPU computing PF matrix\n");
 
-            IDoutPF2Dn = create_2Dimage_ID("psinvPFmat", NBpixin * PForder, NBpixout);
+            create_2Dimage_ID("psinvPFmat", NBpixin * PForder, NBpixout, &IDoutPF2Dn);
             for(PFpix = 0; PFpix < NBpixout;
                     PFpix++) // PFpix is the pixel for which the filter is created (axis 1 in cube, jj)
             {
@@ -1752,7 +1760,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         {
             printf("Prepare 3D output \n");
 
-            long IDoutPF3D = create_3Dimage_ID("outPF3D", NBpixin, NBpixout, PForder);
+            imageID IDoutPF3D;
+            create_3Dimage_ID("outPF3D", NBpixin, NBpixout, PForder, &IDoutPF3D);
+
             for(pix = 0; pix < NBpixin; pix++)
                 for(PFpix = 0; PFpix < NBpixout; PFpix++)
                     for(dt = 0; dt < PForder; dt++)
@@ -2020,16 +2030,16 @@ imageID LINARFILTERPRED_Apply_LinPredictor(
         nbspl = data.image[IDin].md[0].size[1];
         xsize = data.image[IDin].md[0].size[0];
         ysize = 1;
-        IDout = create_2Dimage_ID(IDout_name, xsize, nbspl);
-        IDoutf = create_2Dimage_ID("outf", xsize, nbspl);
+        create_2Dimage_ID(IDout_name, xsize, nbspl, &IDout);
+        create_2Dimage_ID("outf", xsize, nbspl, &IDoutf);
         break;
 
     case 3 :
         nbspl = data.image[IDin].md[0].size[2];
         xsize = data.image[IDin].md[0].size[0];
         ysize = data.image[IDin].md[0].size[1];
-        IDout = create_3Dimage_ID(IDout_name, xsize, ysize, nbspl);
-        IDoutf = create_3Dimage_ID("outf", xsize, ysize, nbspl);
+        create_3Dimage_ID(IDout_name, xsize, ysize, nbspl, &IDout);
+        create_3Dimage_ID("outf", xsize, ysize, nbspl, &IDoutf);
         break;
 
     default :
@@ -2282,7 +2292,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
     {
         NBinmaskpix = NBmodeIN0;
         printf("no input mask -> assuming NBinmaskpix = %ld\n", NBinmaskpix);
-        IDinmask = create_2Dimage_ID("inmask", NBinmaskpix, 1);
+        create_2Dimage_ID("inmask", NBinmaskpix, 1, &IDinmask);
         for(uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
         {
             data.image[IDinmask].array.F[ii] = 1.0;
@@ -2357,7 +2367,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
 
 
 
-    IDINbuff = create_2Dimage_ID("INbuffer", NBmodeIN, NBPFstep);
+    create_2Dimage_ID("INbuffer", NBmodeIN, NBPFstep, &IDINbuff);
 
     sizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
     if(sizearray == NULL) {
@@ -2429,11 +2439,11 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
 
     if(SAVEMODE == 1)
     {
-        IDsave = create_2Dimage_ID("testPFsave", 1 + NBmodeIN0 + NBmodeOUT, NBiter);
+        create_2Dimage_ID("testPFsave", 1 + NBmodeIN0 + NBmodeOUT, NBiter, &IDsave);
     }
     if(SAVEMODE == 2)
     {
-        IDsave = create_3Dimage_ID("testPFTout", NBmodeIN0, 1, NBiter);
+        create_3Dimage_ID("testPFTout", NBmodeIN0, 1, NBiter, &IDsave);
     }
 
 
