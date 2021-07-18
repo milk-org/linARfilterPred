@@ -1472,8 +1472,8 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         memcpy(data.image[IDincp].array.F, data.image[IDin].array.F,
                sizeof(float)*inNBelem);
 
-        //save_fits("PFin_copy", "!test_PFin_copy.fits");
-        //save_fits(IDin_name, "!test_PFin.fits");
+        //save_fits("PFin_copy", "test_PFin_copy.fits");
+        //save_fits(IDin_name, "test_PFin.fits");
 
         clock_gettime(CLOCK_REALTIME, &t1);
 
@@ -1538,7 +1538,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
         if(Save == 1)
         {
-            save_fits("PFmatD", "!PFmatD.fits");
+            save_fits("PFmatD", "PFmatD.fits");
         }
         //list_image_ID();
 
@@ -1570,7 +1570,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
                             outpixarray_xy[PFpix]] + alpha * data.image[IDincp].array.F[(k0 + 1) * xysize +
                                     outpixarray_xy[PFpix]];
             }
-        save_fits("PFfmdat", "!PFfmdat.fits");
+        save_fits("PFfmdat", "PFfmdat.fits");
 
 
         /// If using MAGMA, call function CUDACOMP_magma_compute_SVDpseudoInverse()\n
@@ -1598,8 +1598,8 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 
         if(Save == 1)
         {
-            save_fits("PF_VTmat", "!PF_VTmat.fits");
-            save_fits("PFmatC", "!PFmatC.fits");
+            save_fits("PF_VTmat", "PF_VTmat.fits");
+            save_fits("PFmatC", "PFmatC.fits");
         }
         IDmatC = image_ID("PFmatC");
 
@@ -1730,7 +1730,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
         {
             memcpy(data.image[IDoutPF2D].array.F, data.image[IDoutPF2Dn].array.F,
                    sizeof(float)*NBpixout * NBpixin * PForder);
-            save_fits(IDoutPF_name, "!_outPF.fits");
+            save_fits(IDoutPF_name, "_outPF.fits");
         }
         else
         {
@@ -1772,7 +1772,7 @@ imageID LINARFILTERPRED_Build_LinPredictor(
                         data.image[IDoutPF3D].array.F[NBpixout * NBpixin * dt + NBpixin * PFpix + pix] =
                             val;
                     }
-            save_fits("outPF3D", "!_outPF3D.fits");
+            save_fits("outPF3D", "_outPF3D.fits");
         }
 
 
@@ -2698,7 +2698,7 @@ imageID LINARFILTERPRED_PF_RealTimeApply(
             }
         }
 
-        save_fits("testPFTout", "!testPFTout.fits");
+        save_fits("testPFTout", "testPFTout.fits");
     }
 
 
