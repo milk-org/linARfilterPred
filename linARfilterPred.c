@@ -1401,11 +1401,9 @@ imageID LINARFILTERPRED_Build_LinPredictor(const char *IDin_name,
                                                 NB_SVD_Modes,
                                                 "PF_VTmat",
                                                 LOOPmode,
-                                                PSINV_MODE,
-                                                PSINV_s,
-                                                PSINV_tol,
                                                 testmode,
                                                 64,
+                                                0, // GPU device
                                                 NULL);
 #else
         printf("Not using magma ...\n");
