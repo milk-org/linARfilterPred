@@ -5,11 +5,17 @@ set(SRCNAME "linARfilterPred")
 message("")
 message(" SRCNAME = ${SRCNAME} -> LIBNAME = ${LIBNAME}")
 
+
+
+
 set(SOURCEFILES
-	${SRCNAME}.c)
+	${SRCNAME}.c
+	build_linPF.c
+)
 
 set(INCLUDEFILES
-	${SRCNAME}.h)
+	${SRCNAME}.h
+)
 
 
 # DEFAULT SETTINGS

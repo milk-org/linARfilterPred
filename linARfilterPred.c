@@ -59,6 +59,11 @@
 
 #include "linARfilterPred/linARfilterPred.h"
 
+#include "build_linPF.h"
+
+
+
+
 #ifdef HAVE_CUDA
 #include "cudacomp/cudacomp.h"
 #endif
@@ -341,6 +346,11 @@ static errno_t init_module_CLI()
         "semtrig, const char *IDPFM_name, long NBPFstep, const char "
         "*IDPFout_name, int nbGPU, long "
         "loop, long NBiter, int SAVEMODE, float tlag, long PFindex)");
+
+
+
+
+    CLIADDCMD_LinARfilterPred__build_linPF();
 
     // add atexit functions here
 
