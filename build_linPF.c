@@ -6,9 +6,10 @@
 
 
 #include <math.h>
+#include <time.h>
 
 #include "CommandLineInterface/CLIcore.h"
-
+#include "CommandLineInterface/timeutils.h"
 #include "COREMOD_iofits/COREMOD_iofits.h"
 
 
@@ -36,6 +37,8 @@ static char *outPFname;
 static float *loopgain;
 static long   fpi_loopgain;
 
+static int32_t *testmode;
+static long     fpi_testmode;
 
 
 
@@ -87,7 +90,14 @@ static CLICMDARGDEF farg[] = {{CLIARG_STREAM,
                                "0.2",
                                CLIARG_HIDDEN_DEFAULT,
                                (void **) &loopgain,
-                               &fpi_loopgain}};
+                               &fpi_loopgain},
+                              {CLIARG_INT32,
+                               ".testmode",
+                               "test mode",
+                               "0",
+                               CLIARG_HIDDEN_DEFAULT,
+                               (void **) &testmode,
+                               &fpi_testmode}};
 
 
 
@@ -528,7 +538,7 @@ static errno_t compute_function()
                                             NB_SVD_Modes,
                                             "PF_VTmat",
                                             LOOPmode,
-                                            0, //testmode
+                                            *testmode,
                                             32,
                                             0, // GPU device
                                             NULL);
@@ -616,7 +626,7 @@ static errno_t compute_function()
         IDoutPF2D = image_ID(outPFname);
     }
 
-    imageID IDoutmask = image_ID("outmask");
+
 
     printf("===========================================================\n");
     printf("ASSEMBLING OUTPUT\n");
@@ -627,6 +637,128 @@ static errno_t compute_function()
     printf("  PForder  = %u\n", *PForder);
     printf("===========================================================\n");
 
+
+    long IDoutPF2Dn = image_ID("psinvPFmat");
+    if (IDoutPF2Dn == -1)
+    {
+        printf("------------------- CPU computing PF matrix\n");
+
+        create_2Dimage_ID("psinvPFmat",
+                          NBpixin * *PForder,
+                          NBpixout,
+                          &IDoutPF2Dn);
+        for (
+            long PFpix = 0; PFpix < NBpixout;
+            PFpix++) // PFpix is the pixel for which the filter is created (axis 1 in cube, jj)
+        {
+
+            // loop on input values
+            for (long pix = 0; pix < NBpixin; pix++)
+            {
+                for (long dt = 0; dt < *PForder; dt++)
+                {
+                    float val  = 0.0;
+                    long  ind1 = (NBpixin * dt + pix) * NBmvec1;
+                    for (long m = 0; m < NBmvec; m++)
+                    {
+                        val += data.image[IDmatC].array.F[ind1 + m] *
+                               data.image[IDfm].array.F[PFpix * NBmvec + m];
+                    }
+
+                    data.image[IDoutPF2Dn]
+                        .array
+                        .F[PFpix * (*PForder * NBpixin) + dt * NBpixin + pix] =
+                        val;
+                }
+            }
+        }
+    }
+    else
+    {
+        printf("------------------- Using GPU-computed PF matrix\n");
+    }
+    delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
+
+    if (LOOPmode == 1)
+    {
+        data.image[IDoutPF2Draw].md[0].write = 1;
+        memcpy(data.image[IDoutPF2Draw].array.F,
+               data.image[IDoutPF2Dn].array.F,
+               sizeof(float) * NBpixout * NBpixin * *PForder);
+        COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2Draw, -1);
+        data.image[IDoutPF2Draw].md[0].cnt0++;
+        data.image[IDoutPF2Draw].md[0].write = 0;
+    }
+
+    // Mix current PF with last one
+    data.image[IDoutPF2D].md[0].write = 1;
+    if (LOOPmode == 0)
+    {
+        memcpy(data.image[IDoutPF2D].array.F,
+               data.image[IDoutPF2Dn].array.F,
+               sizeof(float) * NBpixout * NBpixin * *PForder);
+        save_fits(outPFname, "_outPF.fits");
+    }
+    else
+    {
+        printf("Mixing PF matrix with gain = %f ....", *loopgain);
+        fflush(stdout);
+        for (long PFpix = 0; PFpix < NBpixout; PFpix++)
+            for (long pix = 0; pix < NBpixin; pix++)
+                for (long dt = 0; dt < *PForder; dt++)
+                {
+                    float val0 = data.image[IDoutPF2D]
+                                     .array.F[PFpix * (*PForder * NBpixin) +
+                                              dt * NBpixin + pix]; // Previous
+                    float val = data.image[IDoutPF2Dn]
+                                    .array.F[PFpix * (*PForder * NBpixin) +
+                                             dt * NBpixin + pix]; // New
+                    data.image[IDoutPF2D].array.F[PFpix * (*PForder * NBpixin) +
+                                                  dt * NBpixin + pix] =
+                        (1.0 - *loopgain) * val0 + *loopgain * val;
+                }
+        printf(" done\n");
+        fflush(stdout);
+    }
+    COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2D, -1);
+    data.image[IDoutPF2D].md[0].cnt0++;
+    data.image[IDoutPF2D].md[0].write = 0;
+
+    if (*testmode == 2)
+    {
+        printf("Prepare 3D output \n");
+
+        imageID IDoutPF3D;
+        create_3Dimage_ID("outPF3D", NBpixin, NBpixout, *PForder, &IDoutPF3D);
+
+        for (long pix = 0; pix < NBpixin; pix++)
+            for (long PFpix = 0; PFpix < NBpixout; PFpix++)
+                for (long dt = 0; dt < *PForder; dt++)
+                {
+                    float val = data.image[IDoutPF2D]
+                                    .array.F[PFpix * (*PForder * NBpixin) +
+                                             dt * NBpixin + pix];
+                    data.image[IDoutPF3D].array.F[NBpixout * NBpixin * dt +
+                                                  NBpixin * PFpix + pix] = val;
+                }
+        save_fits("outPF3D", "_outPF3D.fits");
+    }
+
+    printf("DONE\n");
+    fflush(stdout);
+    struct timespec t2;
+    clock_gettime(CLOCK_REALTIME, &t2);
+
+    struct timespec tdiff    = timespec_diff(t0, t1);
+    double          tdiffv01 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
+
+    tdiff           = timespec_diff(t1, t2);
+    double tdiffv12 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
+
+    printf("Computing time = %5.3f s / %5.3f s -> fraction = %8.6f\n",
+           tdiffv12,
+           tdiffv01 + tdiffv12,
+           tdiffv12 / (tdiffv01 + tdiffv12));
 
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
