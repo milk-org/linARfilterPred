@@ -582,7 +582,7 @@ static errno_t compute_function()
     /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
 
     long NB_SVD_Modes = 10000;
-    int  LOOPmode     = 1; // re-use arrays
+    int  LOOPmode     = 0; // 1 if re-use arrays
 
 #ifdef HAVE_MAGMA
     printf("Using magma ...\n");
