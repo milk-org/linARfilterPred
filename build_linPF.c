@@ -679,6 +679,8 @@ static errno_t compute_function()
     }
     delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
 
+    list_image_ID();
+    printf("IDoutPF2Draw = %ld\n", IDoutPF2Draw);
     data.image[IDoutPF2Draw].md[0].write = 1;
     memcpy(data.image[IDoutPF2Draw].array.F,
            data.image[IDoutPF2Dn].array.F,
@@ -687,7 +689,7 @@ static errno_t compute_function()
     data.image[IDoutPF2Draw].md[0].cnt0++;
     data.image[IDoutPF2Draw].md[0].write = 0;
 
-
+    printf("IDoutPF2D = %ld\n", IDoutPF2D);
     // Mix current PF with last one
     data.image[IDoutPF2D].md[0].write = 1;
 
