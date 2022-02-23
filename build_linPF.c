@@ -768,7 +768,6 @@ static errno_t compute_function()
            tdiffv12 / (tdiffv01 + tdiffv12));
 
 
-    list_image_ID();
 
     printf("==============================================\n");
     printf("==============================================\n");
