@@ -12,6 +12,10 @@
 #include "COREMOD_iofits/COREMOD_iofits.h"
 
 
+#ifdef HAVE_CUDA
+#include "cudacomp/cudacomp.h"
+#endif
+
 
 static char *inname;
 
