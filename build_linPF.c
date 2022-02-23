@@ -408,6 +408,12 @@ static errno_t compute_function()
 
 
 
+
+    // Allocate future measured data matrix
+    imageID IDfm;
+    create_2Dimage_ID("PFfmdat", NBmvec, NBpixout, &IDfm);
+
+
     // Prepare output filter images
     //
     // 3D FILTER MATRIX - contains all pixels
@@ -460,6 +466,7 @@ static errno_t compute_function()
 
     struct timespec t0;
     struct timespec t1;
+
 
 
 
@@ -555,9 +562,6 @@ static errno_t compute_function()
     fflush(stdout);
 
     // Assemble future measured data matrix
-    imageID IDfm;
-    create_2Dimage_ID("PFfmdat", NBmvec, NBpixout, &IDfm);
-
     float alpha = *PFlatency - ((long) (*PFlatency));
     for (long PFpix = 0; PFpix < NBpixout; PFpix++)
         for (long m = 0; m < NBmvec; m++)
@@ -676,7 +680,7 @@ static errno_t compute_function()
     {
         printf("------------------- Using GPU-computed PF matrix\n");
     }
-    delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
+    // delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
 
     list_image_ID();
     printf("IDoutPF2Draw = %ld\n", IDoutPF2Draw);
@@ -691,6 +695,7 @@ static errno_t compute_function()
     printf("IDoutPF2D = %ld\n", IDoutPF2D);
     // Mix current PF with last one
     data.image[IDoutPF2D].md[0].write = 1;
+
 
     /*    if (LOOPmode == 0)
         {
@@ -742,6 +747,7 @@ static errno_t compute_function()
                                                   NBpixin * PFpix + pix] = val;
                 }
         save_fits("outPF3D", "_outPF3D.fits");
+        delete_image_ID("outPF3D", DELETE_IMAGE_ERRMODE_WARNING);
     }
 
 
@@ -760,6 +766,9 @@ static errno_t compute_function()
            tdiffv12,
            tdiffv01 + tdiffv12,
            tdiffv12 / (tdiffv01 + tdiffv12));
+
+
+    list_image_ID();
 
     printf("==============================================\n");
     printf("==============================================\n");
