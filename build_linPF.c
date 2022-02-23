@@ -453,7 +453,6 @@ static errno_t compute_function()
         free(imsizearray);
         COREMOD_MEMORY_image_set_semflush(outPFname, -1);
         COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
-        free(imsizearray);
     }
 
 
