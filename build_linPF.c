@@ -679,47 +679,46 @@ static errno_t compute_function()
     }
     delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
 
-    if (LOOPmode == 1)
-    {
-        data.image[IDoutPF2Draw].md[0].write = 1;
-        memcpy(data.image[IDoutPF2Draw].array.F,
-               data.image[IDoutPF2Dn].array.F,
-               sizeof(float) * NBpixout * NBpixin * *PForder);
-        COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2Draw, -1);
-        data.image[IDoutPF2Draw].md[0].cnt0++;
-        data.image[IDoutPF2Draw].md[0].write = 0;
-    }
+    data.image[IDoutPF2Draw].md[0].write = 1;
+    memcpy(data.image[IDoutPF2Draw].array.F,
+           data.image[IDoutPF2Dn].array.F,
+           sizeof(float) * NBpixout * NBpixin * *PForder);
+    COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2Draw, -1);
+    data.image[IDoutPF2Draw].md[0].cnt0++;
+    data.image[IDoutPF2Draw].md[0].write = 0;
+
 
     // Mix current PF with last one
     data.image[IDoutPF2D].md[0].write = 1;
-    if (LOOPmode == 0)
-    {
-        memcpy(data.image[IDoutPF2D].array.F,
-               data.image[IDoutPF2Dn].array.F,
-               sizeof(float) * NBpixout * NBpixin * *PForder);
-        save_fits(outPFname, "_outPF.fits");
-    }
-    else
-    {
-        printf("Mixing PF matrix with gain = %f ....", *loopgain);
-        fflush(stdout);
-        for (long PFpix = 0; PFpix < NBpixout; PFpix++)
-            for (long pix = 0; pix < NBpixin; pix++)
-                for (long dt = 0; dt < *PForder; dt++)
-                {
-                    float val0 = data.image[IDoutPF2D]
-                                     .array.F[PFpix * (*PForder * NBpixin) +
-                                              dt * NBpixin + pix]; // Previous
-                    float val = data.image[IDoutPF2Dn]
-                                    .array.F[PFpix * (*PForder * NBpixin) +
-                                             dt * NBpixin + pix]; // New
-                    data.image[IDoutPF2D].array.F[PFpix * (*PForder * NBpixin) +
-                                                  dt * NBpixin + pix] =
-                        (1.0 - *loopgain) * val0 + *loopgain * val;
-                }
-        printf(" done\n");
-        fflush(stdout);
-    }
+
+    /*    if (LOOPmode == 0)
+        {
+            memcpy(data.image[IDoutPF2D].array.F,
+                   data.image[IDoutPF2Dn].array.F,
+                   sizeof(float) * NBpixout * NBpixin * *PForder);
+            save_fits(outPFname, "_outPF.fits");
+        }
+        else
+        {*/
+    printf("Mixing PF matrix with gain = %f ....", *loopgain);
+    fflush(stdout);
+    for (long PFpix = 0; PFpix < NBpixout; PFpix++)
+        for (long pix = 0; pix < NBpixin; pix++)
+            for (long dt = 0; dt < *PForder; dt++)
+            {
+                float val0 = data.image[IDoutPF2D]
+                                 .array.F[PFpix * (*PForder * NBpixin) +
+                                          dt * NBpixin + pix]; // Previous
+                float val = data.image[IDoutPF2Dn]
+                                .array.F[PFpix * (*PForder * NBpixin) +
+                                         dt * NBpixin + pix]; // New
+                data.image[IDoutPF2D].array.F[PFpix * (*PForder * NBpixin) +
+                                              dt * NBpixin + pix] =
+                    (1.0 - *loopgain) * val0 + *loopgain * val;
+            }
+    printf(" done\n");
+    fflush(stdout);
+
     COREMOD_MEMORY_image_set_sempost_byID(IDoutPF2D, -1);
     data.image[IDoutPF2D].md[0].cnt0++;
     data.image[IDoutPF2D].md[0].write = 0;
@@ -743,6 +742,7 @@ static errno_t compute_function()
                 }
         save_fits("outPF3D", "_outPF3D.fits");
     }
+
 
     printf("DONE\n");
     fflush(stdout);
