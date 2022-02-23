@@ -408,10 +408,61 @@ static errno_t compute_function()
 
 
 
+    // Prepare output filter images
+    //
+    // 3D FILTER MATRIX - contains all pixels
+    // axis 0 [ii] : input mode
+    // axis 1 [jj] : reconstructed mode
+    // axis 2 [kk] : time step
+
+    // 2D Filter - contains only used input and output
+    // axis 0 [ii1] : input mode x time step
+    // axis 1 [jj1] : output mode
+
+    imageID IDoutPF2Draw;
+    imageID IDoutPF2D;
+    {
+        uint32_t *imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+        if (imsizearray == NULL)
+        {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
+        imsizearray[0] = NBpixin * (*PForder);
+        imsizearray[1] = NBpixout;
+        char IDoutPF_name_raw[STRINGMAXLEN_IMGNAME];
+        WRITE_IMAGENAME(IDoutPF_name_raw, "%s_raw", outPFname);
+
+        create_image_ID(outPFname,
+                        2,
+                        imsizearray,
+                        _DATATYPE_FLOAT,
+                        1,
+                        1,
+                        0,
+                        &IDoutPF2D);
+        create_image_ID(IDoutPF_name_raw,
+                        2,
+                        imsizearray,
+                        _DATATYPE_FLOAT,
+                        1,
+                        1,
+                        0,
+                        &IDoutPF2Draw);
+        free(imsizearray);
+        COREMOD_MEMORY_image_set_semflush(outPFname, -1);
+        COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
+        free(imsizearray);
+    }
+
+
+
+
     struct timespec t0;
     struct timespec t1;
 
-    imageID IDoutPF2Draw;
+
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
@@ -573,57 +624,6 @@ static errno_t compute_function()
     if (system("mkdir -p pixfilters") != 0)
     {
         PRINT_ERROR("system() returns non-zero value");
-    }
-
-    // 3D FILTER MATRIX - contains all pixels
-    // axis 0 [ii] : input mode
-    // axis 1 [jj] : reconstructed mode
-    // axis 2 [kk] : time step
-
-    // 2D Filter - contains only used input and output
-    // axis 0 [ii1] : input mode x time step
-    // axis 1 [jj1] : output mode
-
-    imageID IDoutPF2D;
-    if (processinfo->timerindex ==
-        0) // create 2D and 3D filters as shared memory
-    {
-        uint32_t *imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
-        if (imsizearray == NULL)
-        {
-            PRINT_ERROR("malloc returns NULL pointer");
-            abort();
-        }
-
-        imsizearray[0] = NBpixin * (*PForder);
-        imsizearray[1] = NBpixout;
-        char IDoutPF_name_raw[STRINGMAXLEN_IMGNAME];
-        WRITE_IMAGENAME(IDoutPF_name_raw, "%s_raw", outPFname);
-
-        create_image_ID(outPFname,
-                        2,
-                        imsizearray,
-                        _DATATYPE_FLOAT,
-                        1,
-                        1,
-                        0,
-                        &IDoutPF2D);
-        create_image_ID(IDoutPF_name_raw,
-                        2,
-                        imsizearray,
-                        _DATATYPE_FLOAT,
-                        1,
-                        1,
-                        0,
-                        &IDoutPF2Draw);
-        free(imsizearray);
-        COREMOD_MEMORY_image_set_semflush(outPFname, -1);
-        COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
-        free(imsizearray);
-    }
-    else
-    {
-        IDoutPF2D = image_ID(outPFname);
     }
 
 
