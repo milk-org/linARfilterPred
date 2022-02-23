@@ -761,6 +761,9 @@ static errno_t compute_function()
            tdiffv01 + tdiffv12,
            tdiffv12 / (tdiffv01 + tdiffv12));
 
+    printf("==============================================\n");
+    printf("==============================================\n");
+    printf("==============================================\n");
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
 
