@@ -27,9 +27,6 @@ static long    fpi_reglambda;
 
 static char *outPFname;
 
-static int32_t *loopmode;
-static long     fpi_loopmode;
-
 static float *loopgain;
 static long   fpi_loopgain;
 
@@ -78,13 +75,6 @@ static CLICMDARGDEF farg[] = {{CLIARG_STR,
                                CLIARG_VISIBLE_DEFAULT,
                                (void **) &outPFname,
                                NULL},
-                              {CLIARG_INT32,
-                               ".loopmode",
-                               "1 if looping",
-                               "1",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &loopmode,
-                               &fpi_loopmode},
                               {CLIARG_FLOAT32,
                                ".loopgain",
                                "loop gain",
