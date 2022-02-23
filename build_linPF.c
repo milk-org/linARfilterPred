@@ -587,7 +587,7 @@ static errno_t compute_function()
 
         imsizearray[0] = NBpixin * (*PForder);
         imsizearray[1] = NBpixout;
-        char IDoutPF_name_raw[STRINGMAXLEN_IMAGE_NAME];
+        char IDoutPF_name_raw[STRINGMAXLEN_IMGNAME];
         WRITE_IMAGENAME(IDoutPF_name_raw, "%s_raw", outPFname);
 
         create_image_ID(outPFname,
