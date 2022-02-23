@@ -9,6 +9,8 @@
 
 #include "CommandLineInterface/CLIcore.h"
 
+#include "COREMOD_iofits/COREMOD_iofits.h"
+
 
 
 static char *inname;
@@ -33,7 +35,7 @@ static long   fpi_loopgain;
 
 
 
-static CLICMDARGDEF farg[] = {{CLIARG_STR,
+static CLICMDARGDEF farg[] = {{CLIARG_STREAM,
                                ".inname",
                                "input telemetry",
                                "indata",
@@ -93,6 +95,10 @@ static errno_t customCONFsetup()
 {
     if (data.fpsptr != NULL)
     {
+        data.fpsptr->parray[fpi_PFlatency].fpflag |= FPFLAG_WRITERUN;
+        data.fpsptr->parray[fpi_SVDeps].fpflag |= FPFLAG_WRITERUN;
+        data.fpsptr->parray[fpi_reglambda].fpflag |= FPFLAG_WRITERUN;
+        data.fpsptr->parray[fpi_loopgain].fpflag |= FPFLAG_WRITERUN;
     }
 
     return RETURN_SUCCESS;
@@ -131,6 +137,9 @@ static errno_t help_function()
 static errno_t compute_function()
 {
     DEBUG_TRACE_FSTART();
+
+
+    int DC_MODE = 0; // 1 if average value of each mode is removed
 
 
     // connect to input telemetry
@@ -385,9 +394,14 @@ static errno_t compute_function()
 
 
 
+    struct timespec t0;
+    struct timespec t1;
+
+    imageID IDoutPF2Draw;
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
+    clock_gettime(CLOCK_REALTIME, &t0);
 
     printf("=========== LOOP ITERATION %6ld =======\n", processinfo->loopcnt);
     printf("  PFlag     = %20f      ", *PFlatency);
@@ -396,6 +410,218 @@ static errno_t compute_function()
     printf("  LOOPgain  = %20f\n", *loopgain);
     printf("\n");
 
+    /// *STEP: Copy IDin to IDincp*
+    ///
+    /// Necessary as input may be continuously changing between consecutive loop iterations.
+    ///
+    IDincp = image_ID("PFin_copy");
+    memcpy(data.image[IDincp].array.F,
+           imgin.im->array.F,
+           sizeof(float) * inNBelem);
+
+    clock_gettime(CLOCK_REALTIME, &t1);
+
+
+
+    /// *STEP: if DC_MODE==1, compute average value from each variable*
+    if (DC_MODE == 1) // remove average
+    {
+        for (long pix = 0; pix < NBpixin; pix++)
+        {
+            ave_inarray[pix] = 0.0;
+            for (uint32_t m = 0; m < nbspl; m++)
+            {
+                ave_inarray[pix] +=
+                    data.image[IDincp].array.F[m * xysize + pixarray_xy[pix]];
+            }
+            ave_inarray[pix] /= nbspl;
+        }
+    }
+    else
+    {
+        for (uint32_t pix = 0; pix < NBpixin; pix++)
+        {
+            ave_inarray[pix] = 0.0;
+        }
+    }
+
+
+
+    /// *STEP: Fill up data matrix PFmatD from input telemetry*
+    ///
+    for (long m = 0; m < NBmvec1; m++)
+    {
+        long k0 = m + *PForder - 1; // dt=0 index
+        for (long pix = 0; pix < NBpixin; pix++)
+            for (long dt = 0; dt < *PForder; dt++)
+            {
+                data.image[IDmatA].array.F[(NBpixin * dt + pix) * NBmvec1 + m] =
+                    data.image[IDincp]
+                        .array.F[(k0 - dt) * xysize + pixarray_xy[pix]] -
+                    ave_inarray[pix];
+            }
+    }
+
+
+
+    /// *STEP: Write regularization coefficients (optional)*
+    ///
+    if (REG == 1)
+    {
+        for (long m = 0; m < mvecsize; m++)
+        {
+            //m1 = NBmvec + m;
+            data.image[IDmatA].array.F[(m) *NBmvec1 + (NBmvec + m)] =
+                *reglambda;
+        }
+    }
+
+    int Save = 1;
+    if (Save == 1)
+    {
+        save_fits("PFmatD", "PFmatD.fits");
+    }
+
+
+    /// ### Compute pseudo-inverse of PFmatD
+    ///
+    /// *STEP: Compute Pseudo-Inverse of PFmatD*
+    ///
+    printf("Assembling pseudoinverse\n");
+    fflush(stdout);
+
+    // Assemble future measured data matrix
+    imageID IDfm;
+    create_2Dimage_ID("PFfmdat", NBmvec, NBpixout, &IDfm);
+
+    float alpha = *PFlatency - ((long) (*PFlatency));
+    for (long PFpix = 0; PFpix < NBpixout; PFpix++)
+        for (long m = 0; m < NBmvec; m++)
+        {
+            long k0 = m + *PForder - 1;
+            k0 += (long) *PFlatency;
+
+            data.image[IDfm].array.F[PFpix * NBmvec + m] =
+                (1.0 - alpha) *
+                    data.image[IDincp]
+                        .array.F[(k0) *xysize + outpixarray_xy[PFpix]] +
+                alpha * data.image[IDincp]
+                            .array.F[(k0 + 1) * xysize + outpixarray_xy[PFpix]];
+        }
+    save_fits("PFfmdat", "PFfmdat.fits");
+
+    /// If using MAGMA, call function CUDACOMP_magma_compute_SVDpseudoInverse()\n
+    /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
+
+    long NB_SVD_Modes = 10000;
+    int  LOOPmode     = 1; // re-use arrays
+
+#ifdef HAVE_MAGMA
+    printf("Using magma ...\n");
+    CUDACOMP_magma_compute_SVDpseudoInverse("PFmatD",
+                                            "PFmatC",
+                                            *SVDeps,
+                                            NB_SVD_Modes,
+                                            "PF_VTmat",
+                                            LOOPmode,
+                                            0, //testmode
+                                            64,
+                                            0, // GPU device
+                                            NULL);
+#else
+    printf("Not using magma ...\n");
+    linopt_compute_SVDpseudoInverse("PFmatD",
+                                    "PFmatC",
+                                    *SVDeps,
+                                    NB_SVD_Modes,
+                                    "PF_VTmat",
+                                    NULL);
+#endif
+
+
+    // Result (pseudoinverse) is stored in image PFmatC\n
+    printf("Done assembling pseudoinverse\n");
+    fflush(stdout);
+
+    if (Save == 1)
+    {
+        save_fits("PF_VTmat", "PF_VTmat.fits");
+        save_fits("PFmatC", "PFmatC.fits");
+    }
+    imageID IDmatC = image_ID("PFmatC");
+
+    ///
+    /// ### Assemble Predictive Filter
+    ///
+    printf("Compute filters\n");
+    fflush(stdout);
+
+    if (system("mkdir -p pixfilters") != 0)
+    {
+        PRINT_ERROR("system() returns non-zero value");
+    }
+
+    // 3D FILTER MATRIX - contains all pixels
+    // axis 0 [ii] : input mode
+    // axis 1 [jj] : reconstructed mode
+    // axis 2 [kk] : time step
+
+    // 2D Filter - contains only used input and output
+    // axis 0 [ii1] : input mode x time step
+    // axis 1 [jj1] : output mode
+
+    imageID IDoutPF2D;
+    if (processinfo->timerindex ==
+        0) // create 2D and 3D filters as shared memory
+    {
+        uint32_t *imsizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
+        if (imsizearray == NULL)
+        {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
+        imsizearray[0] = NBpixin * (*PForder);
+        imsizearray[1] = NBpixout;
+        char IDoutPF_name_raw[STRINGMAXLEN_IMAGE_NAME];
+        WRITE_IMAGENAME(IDoutPF_name_raw, "%s_raw", outPFname);
+
+        create_image_ID(outPFname,
+                        2,
+                        imsizearray,
+                        _DATATYPE_FLOAT,
+                        1,
+                        1,
+                        0,
+                        &IDoutPF2D);
+        create_image_ID(IDoutPF_name_raw,
+                        2,
+                        imsizearray,
+                        _DATATYPE_FLOAT,
+                        1,
+                        1,
+                        0,
+                        &IDoutPF2Draw);
+        free(imsizearray);
+        COREMOD_MEMORY_image_set_semflush(outPFname, -1);
+        COREMOD_MEMORY_image_set_semflush(IDoutPF_name_raw, -1);
+        free(imsizearray);
+    }
+    else
+    {
+        IDoutPF2D = image_ID(outPFname);
+    }
+
+    imageID IDoutmask = image_ID("outmask");
+
+    printf("===========================================================\n");
+    printf("ASSEMBLING OUTPUT\n");
+    printf("  NBpixout = %ld\n", NBpixout);
+    printf("  NBmvec   = %ld\n", NBmvec);
+    printf("  NBmvec1  = %ld\n", NBmvec1);
+    printf("  NBpixin  = %ld\n", NBpixin);
+    printf("  PForder  = %u\n", *PForder);
+    printf("===========================================================\n");
 
 
 
