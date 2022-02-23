@@ -529,7 +529,7 @@ static errno_t compute_function()
                                             "PF_VTmat",
                                             LOOPmode,
                                             0, //testmode
-                                            64,
+                                            32,
                                             0, // GPU device
                                             NULL);
 #else
