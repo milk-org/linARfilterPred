@@ -60,7 +60,7 @@
 #include "linARfilterPred/linARfilterPred.h"
 
 #include "build_linPF.h"
-
+#include "applyPF.h"
 
 
 
@@ -351,6 +351,7 @@ static errno_t init_module_CLI()
 
 
     CLIADDCMD_LinARfilterPred__build_linPF();
+    CLIADDCMD_LinARfilterPred__applyPF();
 
     // add atexit functions here
 
