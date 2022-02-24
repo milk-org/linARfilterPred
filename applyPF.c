@@ -13,6 +13,7 @@
 static uint64_t *AOloopindex;
 
 static char *indatastream;
+static char *inmask;
 
 static char *PFmat;
 
@@ -37,6 +38,13 @@ static CLICMDARGDEF farg[] = {{CLIARG_UINT64,
                                "inim",
                                CLIARG_VISIBLE_DEFAULT,
                                (void **) &indatastream,
+                               NULL},
+                              {CLIARG_STREAM,
+                               ".inmask",
+                               "input data mask",
+                               "inmask",
+                               CLIARG_VISIBLE_DEFAULT,
+                               (void **) &inmask,
                                NULL},
                               {CLIARG_STREAM,
                                ".PFmat",
@@ -121,9 +129,9 @@ static errno_t compute_function()
 
     // Optional input mask
     //
+    imageID IDinmask    = image_ID(inmask);
     long    NBinmaskpix = 0;
     long   *inmaskindex;
-    imageID IDinmask = image_ID("inmask");
     if (IDinmask != -1)
     {
         NBinmaskpix = 0;
