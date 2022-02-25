@@ -231,7 +231,9 @@ static errno_t compute_function()
     //
     printf("Creating input buffer\n");
     IMGID imginbuff;
+    printf("Creating input buffer\n");
     copyIMGID(&imgin, &imginbuff);
+    printf("Creating input buffer\n");
     imginbuff.naxis++;
     imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
     printf("naxis = %d\n", imginbuff.naxis);
