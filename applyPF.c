@@ -12,12 +12,14 @@
 
 static uint64_t *AOloopindex;
 
-static char *indatastream;
+static char *indata;
 static char *inmask;
 
 static char *PFmat;
 
-static char *outPF;
+static char *outdata;
+static char *outmask;
+
 
 static char *GPUsetstr;
 static long  fpi_GPUsetstr;
@@ -25,48 +27,62 @@ static long  fpi_GPUsetstr;
 
 
 
-static CLICMDARGDEF farg[] = {{CLIARG_UINT64,
-                               ".AOloopindex",
-                               "AO loop index",
-                               "0",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &AOloopindex,
-                               NULL},
-                              {CLIARG_STREAM,
-                               ".indata",
-                               "input data stream",
-                               "inim",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &indatastream,
-                               NULL},
-                              {CLIARG_STREAM,
-                               ".inmask",
-                               "input data mask",
-                               "inmask",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &inmask,
-                               NULL},
-                              {CLIARG_STREAM,
-                               ".PFmat",
-                               "predictive filter matrix",
-                               "PFmat",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &PFmat,
-                               NULL},
-                              {CLIARG_STR,
-                               ".outPF",
-                               "output stream",
-                               "outPF",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &outPF,
-                               NULL},
-                              {CLIARG_STR,
-                               ".GPUset",
-                               "column-separated list of GPUs",
-                               ":2:3:5:",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &GPUsetstr,
-                               &fpi_GPUsetstr}};
+static CLICMDARGDEF farg[] = {
+    {// AO loop index - used for automatic naming of streams aolX_
+     CLIARG_UINT64,
+     ".AOloopindex",
+     "AO loop index",
+     "0",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &AOloopindex,
+     NULL},
+    {// Input stream
+     CLIARG_STREAM,
+     ".indata",
+     "input data stream",
+     "inim",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &indata,
+     NULL},
+    {// Input stream active mask
+     CLIARG_STREAM,
+     ".inmask",
+     "input data mask",
+     "inmask",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &inmask,
+     NULL},
+    {// Prediction filter matrix
+     CLIARG_STREAM,
+     ".PFmat",
+     "predictive filter matrix",
+     "PFmat",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &PFmat,
+     NULL},
+    {// Output stream
+     CLIARG_STR,
+     ".outdata",
+     "output data stream",
+     "outPF",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &outdata,
+     NULL},
+    {// Output mask
+     CLIARG_STREAM,
+     ".outmask",
+     "output data mask",
+     "outmask",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &outmask,
+     NULL},
+    {CLIARG_STR,
+     ".GPUset",
+     "column-separated list of GPUs",
+     ":2:3:5:",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &GPUsetstr,
+     &fpi_GPUsetstr}};
 
 
 // Optional custom configuration setup. comptbuff
@@ -116,27 +132,38 @@ static errno_t compute_function()
     DEBUG_TRACE_FSTART();
 
 
-    // connect to input stream
+    // Connect to 2D input stream
     //
-    imageID IDmodevalIN = image_ID(indatastream);
-    long    NBmodeIN0   = data.image[IDmodevalIN].md[0].size[0];
+    IMGID imgin = mkIMGID_from_name(indata);
+    resolveIMGID(&imgin, ERRMODE_ABORT);
+    long NBmodeINmax = imgin.md->size[0] * imgin.md->size[1];
 
-    // connect to predictive filter (PF) matrix
+    // connect to 2D predictive filter (PF) matrix
     //
-    imageID IDPFmat   = image_ID(PFmat);
-    long    NBmodeOUT = data.image[IDPFmat].md[0].size[1];
+    IMGID imgPFmat = mkIMGID_from_name(PFmat);
+    resolveIMGID(&imgPFmat, ERRMODE_ABORT);
+    long NBmodeOUT = imgPFmat.md->size[1];
+
+    list_image_ID();
 
 
-    // Optional input mask
+
+    // Input mask
+    // 0: inactive input
+    // 1: active input
     //
-    imageID IDinmask    = image_ID(inmask);
-    long    NBinmaskpix = 0;
-    long   *inmaskindex;
-    if (IDinmask != -1)
+    IMGID imginmask = mkIMGID_from_name(inmask);
+    resolveIMGID(&imginmask, ERRMODE_WARN);
+
+    long  NBinmaskpix = 0;
+    long *inmaskindex;
+    if (imginmask.ID != -1)
     {
         NBinmaskpix = 0;
-        for (uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
-            if (data.image[IDinmask].array.F[ii] > 0.5)
+        for (uint32_t ii = 0;
+             ii < imginmask.md->size[0] * imginmask.md->size[1];
+             ii++)
+            if (imginmask.im->array.SI8[ii] == 1)
             {
                 NBinmaskpix++;
             }
@@ -149,8 +176,10 @@ static errno_t compute_function()
         }
 
         NBinmaskpix = 0;
-        for (uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
-            if (data.image[IDinmask].array.F[ii] > 0.5)
+        for (uint32_t ii = 0;
+             ii < imginmask.md->size[0] * imginmask.md->size[1];
+             ii++)
+            if (imginmask.im->array.SI8[ii] == 1)
             {
                 inmaskindex[NBinmaskpix] = ii;
                 NBinmaskpix++;
@@ -159,22 +188,14 @@ static errno_t compute_function()
     }
     else
     {
-        NBinmaskpix = NBmodeIN0;
+        NBinmaskpix = NBmodeINmax;
         printf("no input mask -> assuming NBinmaskpix = %ld\n", NBinmaskpix);
-        create_2Dimage_ID("inmask", NBinmaskpix, 1, &IDinmask);
-        for (uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
-        {
-            data.image[IDinmask].array.F[ii] = 1.0;
-        }
 
         inmaskindex = (long *) malloc(sizeof(long) * NBinmaskpix);
-        if (inmaskindex == NULL)
-        {
-            PRINT_ERROR("malloc returns NULL pointer");
-            abort();
-        }
 
-        for (uint32_t ii = 0; ii < data.image[IDinmask].md[0].size[0]; ii++)
+        for (uint32_t ii = 0;
+             ii < imginmask.md->size[0] * imginmask.md->size[1];
+             ii++)
         {
             inmaskindex[NBinmaskpix] = ii;
         }
@@ -182,56 +203,88 @@ static errno_t compute_function()
     long NBmodeIN = NBinmaskpix;
 
 
-    long NBPFstep = data.image[IDPFmat].md[0].size[0] / NBmodeIN;
 
-    printf("Number of input modes         = %ld\n", NBmodeIN0);
-    printf("Number of active input modes  = %ld\n", NBmodeIN);
+
+    long NBPFstep = imgPFmat.md->size[0] / NBmodeIN;
+
+    printf("Number of active input modes  = %ld  / %ld\n",
+           NBmodeIN,
+           NBmodeINmax);
     printf("Number of output modes        = %ld\n", NBmodeOUT);
     printf("Number of time steps          = %ld\n", NBPFstep);
 
 
 
+    // OUTPUT
 
-    // Combined predictive filter output
-    // this is where multiple blocks are assembled
+    // Connect to output mask and data stream
     //
-    char imname[STRINGMAXLEN_IMGNAME];
-    WRITE_IMAGENAME(imname, "aol%ld_modevalPF", *AOloopindex);
-    imageID IDoutcomb = image_ID(imname);
+    IMGID imgout = mkIMGID_from_name(outdata);
+    resolveIMGID(&imgout, ERRMODE_WARN);
 
+    IMGID imgoutmask = mkIMGID_from_name(outmask);
+    resolveIMGID(&imgoutmask, ERRMODE_WARN);
 
-    // Buffer in which recent samples are stored
-    //
-    imageID IDINbuff;
-    create_2Dimage_ID("INbuffer", NBmodeIN, NBPFstep, &IDINbuff);
-
-
-    // output predicted values
-    //
-    imageID IDPFout = -1;
+    // If both outdata and outmask exist, check they are consistent
+    if ((imgout.ID != -1) && (imgoutmask.ID != -1))
     {
-        uint32_t *sizearray = (uint32_t *) malloc(sizeof(uint32_t) * 2);
-        sizearray[0]        = NBmodeOUT;
-        sizearray[1]        = 1;
-        long naxis          = 2;
-        IDPFout             = image_ID(outPF);
-        if (IDPFout == -1)
+        if (IMGIDcompare(imgout, imgoutmask) != 0)
         {
-            create_image_ID(outPF,
-                            naxis,
-                            sizearray,
-                            _DATATYPE_FLOAT,
-                            1,
-                            0,
-                            0,
-                            &IDPFout);
+            PRINT_ERROR("images %s and %s are incompatible\n",
+                        outdata,
+                        outmask);
+            DEBUG_TRACE_FEXIT();
         }
-        free(sizearray);
     }
+    else
+    {
+        if (imgout.ID != -1)
+        {
+            // outdata exists, but outmask does not
+            //
+            // Check that outdata is big enough
+            //
+            if (imgout.md->nelement < (uint64_t) NBmodeOUT)
+            {
+                PRINT_ERROR("images %s too small to contain %ld output modes\n",
+                            outdata,
+                            NBmodeOUT);
+                DEBUG_TRACE_FEXIT();
+            }
+            imcreatelikewiseIMGID(&imgoutmask, &imgout);
+            for (uint32_t ii = 0; ii < NBmodeOUT; ii++)
+            {
+                imgoutmask.im->array.SI8[ii] = 1;
+            }
+        }
+        else if (imgoutmask.ID != -1)
+        {
+            // outmask exists, but outdata does not
+            // create outdata according to outmask
+            //
+            imcreatelikewiseIMGID(&imgout, &imgoutmask);
+        }
+        else
+        {
+            // Neither outdata nor outmask exist
+            // 2D array
+            //
+            imgout = stream_connect_create_2Df32(outdata, NBmodeOUT, 1);
+            imgout = stream_connect_create_2Df32(outmask, NBmodeOUT, 1);
+            for (uint32_t ii = 0; ii < NBmodeOUT; ii++)
+            {
+                imgoutmask.im->array.SI8[ii] = 1;
+            }
+        }
+    }
+
+    list_image_ID();
+
 
 
 
     // Identiy GPUs
+    //
     int NBGPUmax = 20;
     int NBGPU    = 0;
     int gpuset[NBGPUmax];
