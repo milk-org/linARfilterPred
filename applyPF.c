@@ -262,7 +262,9 @@ static errno_t compute_function()
             // outmask exists, but outdata does not
             // create outdata according to outmask
             //
-            imcreatelikewiseIMGID(&imgout, &imgoutmask);
+            copyIMGID(&imgoutmask, &imgout);
+            imgout.datatype = _DATATYPE_FLOAT;
+            createimagefromIMGID(&imgout);
         }
         else
         {
