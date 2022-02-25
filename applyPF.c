@@ -10,6 +10,12 @@
 
 
 
+#ifdef HAVE_CUDA
+#include "cudacomp/cudacomp.h"
+#endif
+
+
+
 static uint64_t *AOloopindex;
 
 static char *indata;
@@ -61,7 +67,7 @@ static CLICMDARGDEF farg[] = {
      (void **) &PFmat,
      NULL},
     {// Output stream
-     CLIARG_STR,
+     CLIARG_STREAM,
      ".outdata",
      "output data stream",
      "outPF",
@@ -130,6 +136,13 @@ static errno_t help_function()
 static errno_t compute_function()
 {
     DEBUG_TRACE_FSTART();
+
+
+#ifdef HAVE_CUDA
+    int status;
+    int GPUstatus[100];
+    int GPUMATMULTCONFindex = 2;
+#endif
 
 
     // Connect to 2D input stream
@@ -214,6 +227,14 @@ static errno_t compute_function()
     printf("Number of time steps          = %ld\n", NBPFstep);
 
 
+    // create input buffer holding recent input values
+    IMGID imginbuff;
+    copyIMGID(&imgin, &imginbuff);
+    strcpy(imginbuff.name, "inbuff");
+    imginbuff.naxis++;
+    imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
+    createimagefromIMGID(&imginbuff);
+
 
     // OUTPUT
 
@@ -287,16 +308,16 @@ static errno_t compute_function()
 
     // Identiy GPUs
     //
-    int NBGPUmax = 20;
-    int NBGPU    = 0;
-    int gpuset[NBGPUmax];
+    int  NBGPUmax = 20;
+    int  NBGPU    = 0;
+    int *GPUset   = (int *) malloc(sizeof(int) * NBGPUmax);
     for (int gpui = 0; gpui < NBGPUmax; gpui++)
     {
         char gpuistr[5];
         sprintf(gpuistr, ":%d:", gpui);
         if (strstr(GPUsetstr, gpuistr) != NULL)
         {
-            gpuset[NBGPU] = gpui;
+            GPUset[NBGPU] = gpui;
             printf("Using GPU device %d\n", gpui);
             NBGPU++;
         }
@@ -315,8 +336,77 @@ static errno_t compute_function()
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
+
+    if (NBGPU > 0) // if using GPU
+    {
+
+#ifdef HAVE_CUDA
+        if (processinfo->loopcnt == 0)
+        {
+            printf("INITIALIZE GPU(s)\n\n");
+            fflush(stdout);
+
+            GPU_loop_MultMat_setup(GPUMATMULTCONFindex,
+                                   imgPFmat.name,
+                                   imginbuff.name,
+                                   imgout.name,
+                                   NBGPU,
+                                   GPUset,
+                                   0,
+                                   1,
+                                   1,
+                                   *AOloopindex);
+
+            printf("INITIALIZATION DONE\n\n");
+            fflush(stdout);
+        }
+        GPU_loop_MultMat_execute(GPUMATMULTCONFindex,
+                                 &status,
+                                 &GPUstatus[100],
+                                 1.0,
+                                 0.0,
+                                 0,
+                                 0);
+#endif
+    }
+    else // if using CPU
+    {
+        // compute output : matrix vector mult with a CPU-based loop
+        imgout.md->write = 1;
+        for (long mi = 0; mi < NBmodeOUT; mi++)
+        {
+            imgout.im->array.F[mi] = 0.0;
+            for (uint32_t ii = 0; ii < NBmodeIN * NBPFstep; ii++)
+            {
+                imgout.im->array.F[mi] +=
+                    imginbuff.im->array.F[ii] *
+                    imgPFmat.im->array.F[mi * NBmodeIN * NBPFstep + ii];
+            }
+        }
+        COREMOD_MEMORY_image_set_sempost_byID(imgout.ID, -1);
+        imgout.md->write = 0;
+        imgout.md->cnt0++;
+    }
+
+
+    // Update time buffer input
+    // do this now to save time when semaphore is posted
+    for (long tstep = NBPFstep - 1; tstep > 0; tstep--)
+    {
+        // tstep-1 -> tstep
+        for (long mi = 0; mi < NBmodeIN; mi++)
+        {
+            imginbuff.im->array.F[NBmodeIN * tstep + mi] =
+                imginbuff.im->array.F[NBmodeIN * (tstep - 1) + mi];
+        }
+    }
+
+
+
+
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
 
+    free(GPUset);
     free(inmaskindex);
 
     DEBUG_TRACE_FEXIT();
