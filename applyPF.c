@@ -237,7 +237,8 @@ static errno_t compute_function()
     imginbuff.naxis++;
     printf("naxis = %d\n", imginbuff.naxis);
     printf("Creating input buffer\n");
-    imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
+    //imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
+    imginbuff.md->size[2] = NBPFstep;
     printf("naxis = %d\n", imginbuff.naxis);
     for (int ax = 0; ax < imginbuff.naxis; ax++)
     {
