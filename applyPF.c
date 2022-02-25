@@ -228,6 +228,7 @@ static errno_t compute_function()
 
 
     // create input buffer holding recent input values
+    //
     IMGID imginbuff;
     copyIMGID(&imgin, &imginbuff);
     strcpy(imginbuff.name, "inbuff");
@@ -235,6 +236,8 @@ static errno_t compute_function()
     imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
     createimagefromIMGID(&imginbuff);
 
+
+    list_image_ID();
 
     // OUTPUT
 
@@ -245,6 +248,9 @@ static errno_t compute_function()
 
     IMGID imgoutmask = mkIMGID_from_name(outmask);
     resolveIMGID(&imgoutmask, ERRMODE_WARN);
+
+
+    list_image_ID();
 
     // If both outdata and outmask exist, check they are consistent
     if ((imgout.ID != -1) && (imgoutmask.ID != -1))
