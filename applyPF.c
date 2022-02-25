@@ -231,7 +231,6 @@ static errno_t compute_function()
     //
     IMGID imginbuff;
     copyIMGID(&imgin, &imginbuff);
-    strcpy(imginbuff.name, "inbuff");
     imginbuff.naxis++;
     imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
     printf("naxis = %d\n", imginbuff.naxis);
@@ -240,6 +239,7 @@ static errno_t compute_function()
         printf("   %d  %d\n", ax, imginbuff.md->size[ax]);
         fflush(stdout);
     }
+    strcpy(imginbuff.name, "inbuff");
     createimagefromIMGID(&imginbuff);
 
 
