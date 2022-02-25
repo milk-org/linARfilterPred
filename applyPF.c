@@ -229,6 +229,7 @@ static errno_t compute_function()
 
     // create input buffer holding recent input values
     //
+    printf("Creating input buffer\n");
     IMGID imginbuff;
     copyIMGID(&imgin, &imginbuff);
     imginbuff.naxis++;
