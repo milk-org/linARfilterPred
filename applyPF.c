@@ -464,7 +464,10 @@ static errno_t compute_function()
     // initialize OL residual measurement counter
     uint32_t OLrescnt  = 0;
     double  *OLRMS2res = (double *) malloc(sizeof(double) * NBPFstep);
-    double  *OLRMS2dt  = (double *) malloc(sizeof(double) * NBPFstep);
+
+    // average and time delay array on input OL buffer
+    double *OLRMS2avedt =
+        (double *) malloc(sizeof(double) * NBPFstep * NBPFstep);
 
 
 
@@ -563,13 +566,16 @@ static errno_t compute_function()
             imgoutTbuff.im->array.F[mi] = imgoutbuff.im->array.F[mi];
         }
 
-        // Compute OL residual as a function of latency
-        // Evaluated for integer frame latency
-        //
+
+
+
         for (long tstep = 0; tstep < NBPFstep; tstep++)
         {
-            double val2 = 0.0;
 
+            // Compute OL residual as a function of latency
+            // Evaluated for integer frame latency
+            //
+            double val2 = 0.0;
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
                 double vdiff = imginbuff.im->array.F[mi] -
@@ -578,16 +584,27 @@ static errno_t compute_function()
             }
             OLRMS2res[tstep] += val2;
 
-
-            val2 = 0.0;
-            for (long mi = 0; mi < NBmodeOUT; mi++)
+            // Residual across time delay and ave on input OL
+            //
+            for (long tave = 1; tave < NBPFstep - tstep; tave++)
             {
-                double vdiff = imginbuff.im->array.F[mi] -
-                               imginbuff.im->array.F[NBmodeOUT * tstep + mi];
-                val2 += vdiff * vdiff;
+                val2 = 0.0;
+                for (long mi = 0; mi < NBmodeOUT; mi++)
+                {
+                    double vave = 0.0;
+                    for (long tstep1 = tstep; tstep1 < tstep + tave; tstep1++)
+                    {
+                        vave += imginbuff.im->array.F[NBmodeOUT * tstep + mi];
+                    }
+                    vave /= tave;
+                    double vdiff = imginbuff.im->array.F[mi] - vave;
+                    val2 += vdiff * vdiff;
+                }
+                OLRMS2avedt[tave * NBPFstep + tstep] += val2;
             }
-            OLRMS2dt[tstep] += val2;
         }
+
+
         if (OLrescnt == *compOLresidualNBpt)
         {
             printf("OL residual  : ");
@@ -598,12 +615,21 @@ static errno_t compute_function()
                 OLRMS2res[tstep] = 0.0;
             }
             printf("\n");
+
             printf("      delta T  ");
             for (long tstep = 0; tstep < NBPFstep; tstep++)
             {
-                OLRMS2dt[tstep] /= (*compOLresidualNBpt);
-                printf("   %7.03f", 1000.0 * sqrt(OLRMS2dt[tstep]));
-                OLRMS2dt[tstep] = 0.0;
+                for (long tave = 1; tave < NBPFstep - tstep; tave++)
+                {
+                    OLRMS2avedt[tave * NBPFstep + tstep] /=
+                        (*compOLresidualNBpt);
+                    printf(" [d%ld a%ld %7.03f ] ",
+                           tstep,
+                           tave,
+                           1000.0 * sqrt(OLRMS2avedt[tave * NBPFstep + tstep]));
+                    OLRMS2avedt[tave * NBPFstep + tstep] = 0.0;
+                }
+                printf("\n");
             }
             printf("\n");
             OLrescnt = 0;
@@ -632,7 +658,7 @@ static errno_t compute_function()
     free(GPUset);
     free(inmaskindex);
     free(OLRMS2res);
-    free(OLRMS2dt);
+    free(OLRMS2avedt);
 
     DEBUG_TRACE_FEXIT();
     return RETURN_SUCCESS;
