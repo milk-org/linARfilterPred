@@ -232,11 +232,7 @@ static errno_t compute_function()
     // create input buffer holding recent input values
     //
     printf("Creating input buffer\n");
-    IMGID imginbuff;
-    copyIMGID(&imgin, &imginbuff);
-    imginbuff.naxis++;
-    imginbuff.size[imginbuff.naxis - 1] = NBPFstep;
-    strcpy(imginbuff.name, "inbuff");
+    IMGID imginbuff = makeIMGID_2D("imbuff", NBmodeIN, NBPFstep);
     createimagefromIMGID(&imginbuff);
 
 
@@ -366,8 +362,13 @@ static errno_t compute_function()
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
-
-
+    // Fill in input buffer most recent measurement
+    // At this point, the older measurements have already been moved down
+    //
+    for (long mi = 0; mi < NBmodeIN; mi++)
+    {
+        imginbuff.im->array.F[mi] = imgin.im->array.F[inmaskindex[mi]];
+    }
 
     if (NBGPU > 0) // if using GPU
     {
