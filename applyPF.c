@@ -576,6 +576,7 @@ static errno_t compute_function()
             OLRMS2res[tstep] += val2;
 
 
+            double val2 = 0.0;
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
                 double vdiff = imgin.im->array.F[mi] -
@@ -594,7 +595,7 @@ static errno_t compute_function()
                 OLRMS2res[tstep] = 0.0;
             }
             printf("\n");
-            printf("              ");
+            printf("      delta T  ");
             for (long tstep = 0; tstep < NBPFstep; tstep++)
             {
                 OLRMS2dt[tstep] /= (*compOLresidualNBpt);
