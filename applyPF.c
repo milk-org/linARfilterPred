@@ -528,19 +528,6 @@ static errno_t compute_function()
     }
 
 
-    // Update time buffer input
-    // do this now to save time when semaphore is posted
-    //
-    for (long tstep = NBPFstep - 1; tstep > 0; tstep--)
-    {
-        // tstep-1 -> tstep
-        for (long mi = 0; mi < NBmodeIN; mi++)
-        {
-            imginbuff.im->array.F[NBmodeIN * tstep + mi] =
-                imginbuff.im->array.F[NBmodeIN * (tstep - 1) + mi];
-        }
-    }
-
     // Place output block in main output
     //
     for (long mi = 0; mi < NBmodeOUT; mi++)
@@ -593,13 +580,28 @@ static errno_t compute_function()
             for (long tstep = 0; tstep < NBPFstep; tstep++)
             {
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
-                printf("   %7.5g", sqrt(OLRMS2res[tstep]));
+                printf("   %7.03g", 100.0 * sqrt(OLRMS2res[tstep]));
             }
             printf("\n");
             OLrescnt = 0;
         }
         OLrescnt++;
     }
+
+    // Update time buffer input
+    // do this now to save time when semaphore is posted
+    //
+    for (long tstep = NBPFstep - 1; tstep > 0; tstep--)
+    {
+        // tstep-1 -> tstep
+        for (long mi = 0; mi < NBmodeIN; mi++)
+        {
+            imginbuff.im->array.F[NBmodeIN * tstep + mi] =
+                imginbuff.im->array.F[NBmodeIN * (tstep - 1) + mi];
+        }
+    }
+
+
 
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
