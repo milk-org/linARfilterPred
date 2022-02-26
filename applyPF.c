@@ -466,6 +466,9 @@ static errno_t compute_function()
     double  *OLRMS2res = (double *) malloc(sizeof(double) * NBPFstep);
     double  *OLRMS2dt  = (double *) malloc(sizeof(double) * NBPFstep);
 
+
+
+
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
     // Fill in input buffer most recent measurement
@@ -569,7 +572,7 @@ static errno_t compute_function()
 
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
-                double vdiff = imgin.im->array.F[mi] -
+                double vdiff = imginbuff.im->array.F[mi] -
                                imgoutTbuff.im->array.F[NBmodeOUT * tstep + mi];
                 val2 += vdiff * vdiff;
             }
@@ -579,7 +582,7 @@ static errno_t compute_function()
             val2 = 0.0;
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
-                double vdiff = imgin.im->array.F[mi] -
+                double vdiff = imginbuff.im->array.F[mi] -
                                imginbuff.im->array.F[NBmodeOUT * tstep + mi];
                 val2 += vdiff * vdiff;
             }
