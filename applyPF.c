@@ -336,6 +336,63 @@ static errno_t compute_function()
         }
     }
 
+    // output mask index
+    //
+    long  NBoutmaskpix = 0;
+    long *outmaskindex;
+    if (imgoutmask.ID != -1)
+    {
+        NBoutmaskpix = 0;
+        for (uint32_t ii = 0;
+             ii < imginmask.md->size[0] * imginmask.md->size[1];
+             ii++)
+            if (imginmask.im->array.SI8[ii] == 1)
+            {
+                NBoutmaskpix++;
+            }
+
+        outmaskindex = (long *) malloc(sizeof(long) * NBoutmaskpix);
+        if (outmaskindex == NULL)
+        {
+            PRINT_ERROR("malloc returns NULL pointer");
+            abort();
+        }
+
+        NBoutmaskpix = 0;
+        for (uint32_t ii = 0;
+             ii < imgoutmask.md->size[0] * imgoutmask.md->size[1];
+             ii++)
+            if (imgoutmask.im->array.SI8[ii] == 1)
+            {
+                outmaskindex[NBoutmaskpix] = ii;
+                NBoutmaskpix++;
+            }
+        //printf("Number of active input modes  = %ld\n", NBinmaskpix);
+    }
+    else
+    {
+        NBoutmaskpix = NBmodeOUT;
+        printf("no output mask -> assuming NBoutmaskpix = %ld\n", NBoutmaskpix);
+
+        outmaskindex = (long *) malloc(sizeof(long) * NBoutmaskpix);
+
+        for (uint32_t ii = 0;
+             ii < imgoutmask.md->size[0] * imgoutmask.md->size[1];
+             ii++)
+        {
+            outmaskindex[NBoutmaskpix] = ii;
+        }
+    }
+    if (NBmodeOUT != NBoutmaskpix)
+    {
+        PRINT_ERROR(
+            "output mask active pix (%ld) not matching output dim %ld\n",
+            NBoutmaskpix,
+            NBmodeOUT);
+        DEBUG_TRACE_FEXIT();
+        return (EXIT_FAILURE);
+    }
+
 
 
 
@@ -370,6 +427,9 @@ static errno_t compute_function()
            imginbuff.name,
            imgPFmat.name,
            imgoutbuff.name);
+
+
+    //sprocessinfo_WriteMessage("MVM %d -> %d", NBmodeIN*NBPFstep, NBmodeOUT);
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
@@ -436,6 +496,7 @@ static errno_t compute_function()
 
     // Update time buffer input
     // do this now to save time when semaphore is posted
+    //
     for (long tstep = NBPFstep - 1; tstep > 0; tstep--)
     {
         // tstep-1 -> tstep
@@ -445,6 +506,14 @@ static errno_t compute_function()
                 imginbuff.im->array.F[NBmodeIN * (tstep - 1) + mi];
         }
     }
+
+    // Place output block in main output
+    //
+    for (long mi = 0; mi < NBmodeOUT; mi++)
+    {
+        imgout.im->array.F[outmaskindex[mi]] = imgoutbuff.im->array.F[mi];
+    }
+    processinfo_update_output_stream(processinfo, imgout.ID);
 
 
 
