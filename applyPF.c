@@ -30,6 +30,11 @@ static char *outmask;
 static char *GPUsetstr;
 static long  fpi_GPUsetstr;
 
+static uint64_t *compOLresidual;
+static long      fpi_compOLresidual;
+
+static uint32_t *compOLresidualNBpt;
+static long      fpi_compOLresidualNBpt;
 
 
 
@@ -82,13 +87,30 @@ static CLICMDARGDEF farg[] = {
      CLIARG_VISIBLE_DEFAULT,
      (void **) &outmask,
      NULL},
-    {CLIARG_STR,
+    {// Set of GPU(s) for computation
+     CLIARG_STR,
      ".GPUset",
      "column-separated list of GPUs",
-     ":2:3:5:",
-     CLIARG_VISIBLE_DEFAULT,
+     ":0:",
+     CLIARG_HIDDEN_DEFAULT,
      (void **) &GPUsetstr,
-     &fpi_GPUsetstr}};
+     &fpi_GPUsetstr},
+    {// compute residual mismatch
+     CLIARG_ONOFF,
+     ".comp.residual",
+     "compute residual mismatch",
+     "0",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &compOLresidual,
+     &fpi_compOLresidual},
+    {// Set of GPU(s) for computation
+     CLIARG_UINT32,
+     ".comp.OLresidualNBpt",
+     "sampling size for OL residual",
+     "1000",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &compOLresidualNBpt,
+     &fpi_compOLresidualNBpt}};
 
 
 // Optional custom configuration setup. comptbuff
@@ -242,6 +264,14 @@ static errno_t compute_function()
     printf("Creating output buffer\n");
     IMGID imgoutbuff = makeIMGID_2D("imoutbuff", NBmodeOUT, 1);
     createimagefromIMGID(&imgoutbuff);
+
+
+    // Create output buffer holding recent output values
+    // The buffer is used to measure residual OL error as a function of latency
+    //
+    printf("Creating output time buffer\n");
+    IMGID imgoutTbuff = makeIMGID_2D("imoutTbuff", NBmodeOUT, NBPFstep);
+    createimagefromIMGID(&imgoutTbuff);
 
 
 
@@ -431,6 +461,10 @@ static errno_t compute_function()
 
     //sprocessinfo_WriteMessage("MVM %d -> %d", NBmodeIN*NBPFstep, NBmodeOUT);
 
+    // initialize OL residual measurement counter
+    uint32_t OLrescnt  = 0;
+    double  *OLRMS2res = (double *) malloc(sizeof(double) * NBPFstep);
+
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
     // Fill in input buffer most recent measurement
@@ -518,10 +552,61 @@ static errno_t compute_function()
 
 
 
+    if (*compOLresidual == 1)
+    {
+        // Update time buffer output
+        // shift down by 1 unit time
+        //
+        for (long tstep = NBPFstep - 1; tstep > 0; tstep--)
+        {
+            // shift down by 1 unit time
+            for (long mi = 0; mi < NBmodeOUT; mi++)
+            {
+                imgoutTbuff.im->array.F[NBmodeOUT * tstep + mi] =
+                    imgoutTbuff.im->array.F[NBmodeOUT * (tstep - 1) + mi];
+            }
+        }
+        // update top entry
+        for (long mi = 0; mi < NBmodeOUT; mi++)
+        {
+            imgoutTbuff.im->array.F[mi] = imgoutbuff.im->array.F[mi];
+        }
+
+        // Compute OL residual as a function of latency
+        // Evaluated for integer frame latency
+        //
+        for (long tstep = 0; tstep < NBPFstep; tstep++)
+        {
+            double val2 = 0.0;
+
+            for (long mi = 0; mi < NBmodeOUT; mi++)
+            {
+                double vdiff = imgoutbuff.im->array.F[mi] -
+                               imgoutTbuff.im->array.F[NBmodeOUT * tstep + mi];
+                val2 += vdiff * vdiff;
+            }
+            OLRMS2res[tstep] += val2;
+        }
+        if (OLrescnt == *compOLresidualNBpt)
+        {
+            printf("OL residual  : ");
+            for (long tstep = 0; tstep < NBPFstep; tstep++)
+            {
+                OLRMS2res[tstep] /= (*compOLresidualNBpt);
+                printf("   %7.5g", sqrt(OLRMS2res[tstep]));
+            }
+            printf("\n");
+            OLrescnt = 0;
+        }
+        OLrescnt++;
+    }
+
+
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
 
     free(GPUset);
     free(inmaskindex);
+    free(OLRMS2res);
 
     DEBUG_TRACE_FEXIT();
     return RETURN_SUCCESS;
