@@ -232,8 +232,16 @@ static errno_t compute_function()
     // create input buffer holding recent input values
     //
     printf("Creating input buffer\n");
-    IMGID imginbuff = makeIMGID_2D("imbuff", NBmodeIN, NBPFstep);
+    IMGID imginbuff = makeIMGID_2D("iminbuff", NBmodeIN, NBPFstep);
     createimagefromIMGID(&imginbuff);
+
+
+
+    // create input buffer holding recent input values
+    //
+    printf("Creating output buffer\n");
+    IMGID imgoutbuff = makeIMGID_2D("imoutbuff", NBmodeOUT, 1);
+    createimagefromIMGID(&imgoutbuff);
 
 
 
@@ -358,7 +366,10 @@ static errno_t compute_function()
 
     list_image_ID();
 
-    printf("MVM  %s %s -> %s\n", imginbuff.name, imgPFmat.name, imgout.name);
+    printf("MVM  %s %s -> %s\n",
+           imginbuff.name,
+           imgPFmat.name,
+           imgoutbuff.name);
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
@@ -369,6 +380,7 @@ static errno_t compute_function()
     {
         imginbuff.im->array.F[mi] = imgin.im->array.F[inmaskindex[mi]];
     }
+
 
     if (NBGPU > 0) // if using GPU
     {
@@ -382,7 +394,7 @@ static errno_t compute_function()
             GPU_loop_MultMat_setup(GPUMATMULTCONFindex,
                                    imgPFmat.name,
                                    imginbuff.name,
-                                   imgout.name,
+                                   imgoutbuff.name,
                                    NBGPU,
                                    GPUset,
                                    0,
