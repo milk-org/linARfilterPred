@@ -576,7 +576,7 @@ static errno_t compute_function()
             OLRMS2res[tstep] += val2;
 
 
-            double val2 = 0.0;
+            val2 = 0.0;
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
                 double vdiff = imgin.im->array.F[mi] -
