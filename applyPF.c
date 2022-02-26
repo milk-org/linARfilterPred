@@ -238,7 +238,6 @@ static errno_t compute_function()
     createimagefromIMGID(&imginbuff);
 
 
-    list_image_ID();
 
     // OUTPUT
 
@@ -251,7 +250,6 @@ static errno_t compute_function()
     resolveIMGID(&imgoutmask, ERRMODE_WARN);
 
 
-    list_image_ID();
 
     // If both outdata and outmask exist, check they are consistent
     if ((imgout.ID != -1) && (imgoutmask.ID != -1))
@@ -301,6 +299,7 @@ static errno_t compute_function()
                             outdata,
                             NBmodeOUT);
                 DEBUG_TRACE_FEXIT();
+                return (EXIT_FAILURE);
             }
             imcreatelikewiseIMGID(&imgoutmask, &imgout);
             for (uint32_t ii = 0; ii < NBmodeOUT; ii++)
@@ -330,8 +329,6 @@ static errno_t compute_function()
             }
         }
     }
-
-    list_image_ID();
 
 
 
