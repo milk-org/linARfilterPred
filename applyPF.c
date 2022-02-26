@@ -464,6 +464,7 @@ static errno_t compute_function()
     // initialize OL residual measurement counter
     uint32_t OLrescnt  = 0;
     double  *OLRMS2res = (double *) malloc(sizeof(double) * NBPFstep);
+    double  *OLRMS2dt  = (double *) malloc(sizeof(double) * NBPFstep);
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
 
@@ -573,6 +574,15 @@ static errno_t compute_function()
                 val2 += vdiff * vdiff;
             }
             OLRMS2res[tstep] += val2;
+
+
+            for (long mi = 0; mi < NBmodeOUT; mi++)
+            {
+                double vdiff = imgin.im->array.F[mi] -
+                               imginbuff.im->array.F[NBmodeOUT * tstep + mi];
+                val2 += vdiff * vdiff;
+            }
+            OLRMS2dt[tstep] += val2;
         }
         if (OLrescnt == *compOLresidualNBpt)
         {
@@ -582,6 +592,14 @@ static errno_t compute_function()
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
                 printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
                 OLRMS2res[tstep] = 0.0;
+            }
+            printf("\n");
+            printf("              ");
+            for (long tstep = 0; tstep < NBPFstep; tstep++)
+            {
+                OLRMS2dt[tstep] /= (*compOLresidualNBpt);
+                printf("   %7.03f", 1000.0 * sqrt(OLRMS2dt[tstep]));
+                OLRMS2dt[tstep] = 0.0;
             }
             printf("\n");
             OLrescnt = 0;
@@ -610,6 +628,7 @@ static errno_t compute_function()
     free(GPUset);
     free(inmaskindex);
     free(OLRMS2res);
+    free(OLRMS2dt);
 
     DEBUG_TRACE_FEXIT();
     return RETURN_SUCCESS;
