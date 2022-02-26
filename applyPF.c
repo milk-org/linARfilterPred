@@ -582,7 +582,7 @@ static errno_t compute_function()
             for (long mi = 0; mi < NBmodeOUT; mi++)
             {
                 double vdiff = imgoutbuff.im->array.F[mi] -
-                               imgoutTbuff.im->array.F[NBmodeOUT * tstep + mi];
+                               imginbuff.im->array.F[NBmodeOUT * tstep + mi];
                 val2 += vdiff * vdiff;
             }
             OLRMS2res[tstep] += val2;
