@@ -236,10 +236,16 @@ static errno_t compute_function()
     printf("naxis = %d\n", imginbuff.naxis);
     imginbuff.naxis++;
     printf("naxis = %d\n", imginbuff.naxis);
-    printf("Creating input buffer\n");
+    printf("--- Creating input buffer\n");
+    printf("size 0 = %u\n", imginbuff.md->size[0]);
+    fflush(stdout);
+    printf("size 1 = %u\n", imginbuff.md->size[1]);
+    fflush(stdout);
+    printf("size 2 = %u\n", imginbuff.md->size[2]);
+    fflush(stdout);
     //imginbuff.md->size[imginbuff.naxis - 1] = NBPFstep;
     imginbuff.md->size[2] = NBPFstep;
-    printf("naxis = %d\n", imginbuff.naxis);
+    printf("----> naxis = %d\n", imginbuff.naxis);
     for (int ax = 0; ax < imginbuff.naxis; ax++)
     {
         printf("   %d  %d\n", ax, imginbuff.md->size[ax]);
