@@ -256,12 +256,35 @@ static errno_t compute_function()
     // If both outdata and outmask exist, check they are consistent
     if ((imgout.ID != -1) && (imgoutmask.ID != -1))
     {
-        if (IMGIDcompare(imgout, imgoutmask) != 0)
+        // compate image sizes (not type)
+        int compOK = 1;
+        if (imgout.naxis != imgoutmask.naxis)
+        {
+            printf("ERROR: naxis %d %d values don't match\n",
+                   imgout.naxis,
+                   imgoutmask.naxis);
+            compOK = 0;
+        }
+        for (int dim = 0; dim < imgout.naxis; dim++)
+        {
+            if (imgout.size[dim] != imgoutmask.size[dim])
+            {
+                printf("ERROR: size[%d] %d %d values don't match\n",
+                       dim,
+                       imgout.size[dim],
+                       imgoutmask.size[dim]);
+                compOK = 0;
+            }
+        }
+
+
+        if (compOK == 0)
         {
             PRINT_ERROR("images %s and %s are incompatible\n",
                         outdata,
                         outmask);
             DEBUG_TRACE_FEXIT();
+            return (EXIT_FAILURE);
         }
     }
     else
