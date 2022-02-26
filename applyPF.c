@@ -227,6 +227,8 @@ static errno_t compute_function()
     printf("Number of time steps          = %ld\n", NBPFstep);
 
 
+
+
     // create input buffer holding recent input values
     //
     printf("Creating input buffer\n");
@@ -333,7 +335,7 @@ static errno_t compute_function()
 
 
 
-    // Identiy GPUs
+    // Identify GPUs
     //
     int  NBGPUmax = 20;
     int  NBGPU    = 0;
@@ -358,10 +360,13 @@ static errno_t compute_function()
         printf("Using CPU\n");
     }
 
+    list_image_ID();
 
-
+    printf("MVM  %s %s -> %s\n", imginbuff.name, imgPFmat.name, imgout.name);
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_START
+
+
 
 
     if (NBGPU > 0) // if using GPU
