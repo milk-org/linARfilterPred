@@ -583,12 +583,15 @@ static errno_t compute_function()
                 val2 += vdiff * vdiff;
             }
             OLRMS2res[tstep] += val2;
+        }
 
+        for (long tstep = 1; tstep < NBPFstep; tstep++)
+        {
             // Residual across time delay and ave on input OL
             //
             for (long tave = 1; tave < NBPFstep - tstep; tave++)
             {
-                val2 = 0.0;
+                double val2 = 0.0;
                 for (long mi = 0; mi < NBmodeOUT; mi++)
                 {
                     double vave = 0.0;
@@ -616,8 +619,7 @@ static errno_t compute_function()
             }
             printf("\n");
 
-            printf("      delta T  ");
-            for (long tstep = 0; tstep < NBPFstep; tstep++)
+            for (long tstep = 1; tstep < NBPFstep; tstep++)
             {
                 for (long tave = 1; tave < NBPFstep - tstep; tave++)
                 {
