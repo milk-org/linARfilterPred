@@ -597,7 +597,7 @@ static errno_t compute_function()
                     double vave = 0.0;
                     for (long tstep1 = tstep; tstep1 < tstep + tave; tstep1++)
                     {
-                        vave += imginbuff.im->array.F[NBmodeOUT * tstep + mi];
+                        vave += imginbuff.im->array.F[NBmodeOUT * tstep1 + mi];
                     }
                     vave /= tave;
                     double vdiff = imginbuff.im->array.F[mi] - vave;
