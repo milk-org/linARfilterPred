@@ -40,6 +40,9 @@ static long   fpi_loopgain;
 static int32_t *testmode;
 static long     fpi_testmode;
 
+static int32_t *GPUdevice;
+static long     fpi_GPUdevice;
+
 
 
 static CLICMDARGDEF farg[] = {{CLIARG_STREAM,
@@ -97,7 +100,14 @@ static CLICMDARGDEF farg[] = {{CLIARG_STREAM,
                                "0",
                                CLIARG_HIDDEN_DEFAULT,
                                (void **) &testmode,
-                               &fpi_testmode}};
+                               &fpi_testmode},
+                              {CLIARG_INT32,
+                               ".GPUdevice",
+                               "GPU device",
+                               "0",
+                               CLIARG_HIDDEN_DEFAULT,
+                               (void **) &GPUdevice,
+                               &fpi_GPUdevice}};
 
 
 
@@ -594,7 +604,7 @@ static errno_t compute_function()
                                             LOOPmode,
                                             *testmode,
                                             32,
-                                            0, // GPU device
+                                            *GPUdevice,
                                             NULL);
 #else
     printf("Not using magma ...\n");
