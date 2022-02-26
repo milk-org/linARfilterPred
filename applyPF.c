@@ -581,6 +581,7 @@ static errno_t compute_function()
             {
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
                 printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
+                OLRMS2res[tstep] = 0.0;
             }
             printf("\n");
             OLrescnt = 0;
