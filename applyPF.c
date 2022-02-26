@@ -580,7 +580,7 @@ static errno_t compute_function()
             for (long tstep = 0; tstep < NBPFstep; tstep++)
             {
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
-                printf("   %7.03f", 100.0 * sqrt(OLRMS2res[tstep]));
+                printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
             }
             printf("\n");
             OLrescnt = 0;
