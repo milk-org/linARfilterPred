@@ -611,10 +611,14 @@ static errno_t compute_function()
         if (OLrescnt == *compOLresidualNBpt)
         {
 
-
-            for (long tstep = 1; tstep < NBPFstep; tstep++)
+            long NBPFstep_display = NBPFstep;
+            if (NBPFstep_display > 5)
             {
-                printf("%d-frame delay  ", tstep);
+                NBPFstep_display = 5;
+            }
+            for (long tstep = 1; tstep < NBPFstep_display; tstep++)
+            {
+                printf("%ld-frame delay  ", tstep);
 
                 // PREDICTION
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
@@ -622,7 +626,12 @@ static errno_t compute_function()
                 OLRMS2res[tstep] = 0.0;
 
                 // PURE DELAY + AVE
-                for (long tave = 1; tave < NBPFstep - tstep; tave++)
+                long tavemax_display = NBPFstep - tstep;
+                if (tavemax_display > 5)
+                {
+                    tavemax_display = 5;
+                }
+                for (long tave = 1; tave < tavemax_display; tave++)
                 {
                     OLRMS2avedt[tave * NBPFstep + tstep] /=
                         (*compOLresidualNBpt);
