@@ -610,17 +610,16 @@ static errno_t compute_function()
 
         if (OLrescnt == *compOLresidualNBpt)
         {
-            printf("OL residual  : ");
-            for (long tstep = 0; tstep < NBPFstep; tstep++)
-            {
-                OLRMS2res[tstep] /= (*compOLresidualNBpt);
-                printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
-                OLRMS2res[tstep] = 0.0;
-            }
-            printf("\n");
+
 
             for (long tstep = 1; tstep < NBPFstep; tstep++)
             {
+                // PREDICTION
+                OLRMS2res[tstep] /= (*compOLresidualNBpt);
+                printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
+                OLRMS2res[tstep] = 0.0;
+
+                // PURE DELAY + AVE
                 for (long tave = 1; tave < NBPFstep - tstep; tave++)
                 {
                     OLRMS2avedt[tave * NBPFstep + tstep] /=
