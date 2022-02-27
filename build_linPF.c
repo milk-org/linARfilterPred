@@ -567,8 +567,6 @@ static errno_t compute_function()
     ///
     /// *STEP: Compute Pseudo-Inverse of PFmatD*
     ///
-    printf("Assembling pseudoinverse\n");
-    fflush(stdout);
 
     // Assemble future measured data matrix
     float alpha = *PFlatency - ((long) (*PFlatency));
@@ -617,8 +615,6 @@ static errno_t compute_function()
 
 
     // Result (pseudoinverse) is stored in image PFmatC\n
-    printf("Done assembling pseudoinverse\n");
-    fflush(stdout);
 
     //if (Save == 1)
     // {
