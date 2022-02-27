@@ -614,6 +614,8 @@ static errno_t compute_function()
 
             for (long tstep = 1; tstep < NBPFstep; tstep++)
             {
+                printf("%d-frame delay  ", tstep);
+
                 // PREDICTION
                 OLRMS2res[tstep] /= (*compOLresidualNBpt);
                 printf("   %7.03f", 1000.0 * sqrt(OLRMS2res[tstep]));
@@ -624,8 +626,7 @@ static errno_t compute_function()
                 {
                     OLRMS2avedt[tave * NBPFstep + tstep] /=
                         (*compOLresidualNBpt);
-                    printf(" [d%ld a%ld %7.03f ] ",
-                           tstep,
+                    printf(" [ ave %ld %7.03f ] ",
                            tave,
                            1000.0 * sqrt(OLRMS2avedt[tave * NBPFstep + tstep]));
                     OLRMS2avedt[tave * NBPFstep + tstep] = 0.0;
