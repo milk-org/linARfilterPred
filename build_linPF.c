@@ -130,6 +130,7 @@ static errno_t customCONFsetup()
         data.fpsptr->parray[fpi_SVDeps].fpflag |= FPFLAG_WRITERUN;
         data.fpsptr->parray[fpi_reglambda].fpflag |= FPFLAG_WRITERUN;
         data.fpsptr->parray[fpi_loopgain].fpflag |= FPFLAG_WRITERUN;
+        data.fpsptr->parray[fpi_out3Dwrite].fpflag |= FPFLAG_WRITERUN;
     }
 
     return RETURN_SUCCESS;
