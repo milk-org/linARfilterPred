@@ -37,77 +37,84 @@ static char *outPFname;
 static float *loopgain;
 static long   fpi_loopgain;
 
-static int32_t *testmode;
-static long     fpi_testmode;
+static uint64_t *out3Dwrite;
+static long      fpi_out3Dwrite;
 
 static int32_t *GPUdevice;
 static long     fpi_GPUdevice;
 
 
 
-static CLICMDARGDEF farg[] = {{CLIARG_STREAM,
-                               ".inname",
-                               "input telemetry",
-                               "indata",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &inname,
-                               NULL},
-                              {CLIARG_UINT32,
-                               ".PForder",
-                               "predictive filter order",
-                               "10",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &PForder,
-                               &fpi_PForder},
-                              {CLIARG_FLOAT32,
-                               ".PFlatency",
-                               "time latency [frame]",
-                               "2.7",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &PFlatency,
-                               &fpi_PFlatency},
-                              {CLIARG_FLOAT64,
-                               ".SVDeps",
-                               "SVD cutoff",
-                               "0.001",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &SVDeps,
-                               &fpi_SVDeps},
-                              {CLIARG_FLOAT64,
-                               ".reglambda",
-                               "regularization coefficient",
-                               "0.001",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &reglambda,
-                               &fpi_reglambda},
-                              {CLIARG_STR,
-                               ".outPFname",
-                               "output filter",
-                               "outPF",
-                               CLIARG_VISIBLE_DEFAULT,
-                               (void **) &outPFname,
-                               NULL},
-                              {CLIARG_FLOAT32,
-                               ".loopgain",
-                               "loop gain",
-                               "0.2",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &loopgain,
-                               &fpi_loopgain},
-                              {CLIARG_INT32,
-                               ".testmode",
-                               "test mode",
-                               "0",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &testmode,
-                               &fpi_testmode},
-                              {CLIARG_INT32,
-                               ".GPUdevice",
-                               "GPU device",
-                               "0",
-                               CLIARG_HIDDEN_DEFAULT,
-                               (void **) &GPUdevice,
-                               &fpi_GPUdevice}};
+
+static CLICMDARGDEF farg[] = {
+    {// input telemetry
+     CLIARG_STREAM,
+     ".inname",
+     "input telemetry",
+     "indata",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &inname,
+     NULL},
+    {// temporal order of filter: number of time steps in state
+     CLIARG_UINT32,
+     ".PForder",
+     "predictive filter order",
+     "10",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &PForder,
+     &fpi_PForder},
+    {// latency: how far ahead to predict
+     CLIARG_FLOAT32,
+     ".PFlatency",
+     "time latency [frame]",
+     "2.7",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &PFlatency,
+     &fpi_PFlatency},
+    {// SVD limit
+     CLIARG_FLOAT64,
+     ".SVDeps",
+     "SVD cutoff",
+     "0.001",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &SVDeps,
+     &fpi_SVDeps},
+    {// Regularization
+     CLIARG_FLOAT64,
+     ".reglambda",
+     "regularization coefficient",
+     "0.001",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &reglambda,
+     &fpi_reglambda},
+    {CLIARG_STR,
+     ".outPFname",
+     "output filter",
+     "outPF",
+     CLIARG_VISIBLE_DEFAULT,
+     (void **) &outPFname,
+     NULL},
+    {CLIARG_FLOAT32,
+     ".loopgain",
+     "loop gain",
+     "0.2",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &loopgain,
+     &fpi_loopgain},
+    {CLIARG_ONOFF,
+     ".out3Dfilt",
+     "write output 3D filter",
+     "0",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &out3Dwrite,
+     &fpi_out3Dwrite},
+    {CLIARG_INT32,
+     ".GPUdevice",
+     "GPU device",
+     "0",
+     CLIARG_HIDDEN_DEFAULT,
+     (void **) &GPUdevice,
+     &fpi_GPUdevice}};
 
 
 
@@ -599,7 +606,7 @@ static errno_t compute_function()
                                             NB_SVD_Modes,
                                             "PF_VTmat",
                                             LOOPmode,
-                                            *testmode,
+                                            0, // testmode
                                             32,
                                             *GPUdevice,
                                             NULL);
@@ -644,7 +651,7 @@ static errno_t compute_function()
     printf("  NBpixin  = %ld\n", NBpixin);
     printf("  PForder  = %u\n", *PForder);
     printf("===========================================================\n");
-*/
+    */
 
     long IDoutPF2Dn = image_ID("psinvPFmat");
     if (IDoutPF2Dn == -1)
@@ -734,7 +741,7 @@ static errno_t compute_function()
     data.image[IDoutPF2D].md[0].cnt0++;
     data.image[IDoutPF2D].md[0].write = 0;
 
-    if (*testmode == 2)
+    if (*out3Dwrite == 1)
     {
         printf("Prepare 3D output \n");
 
