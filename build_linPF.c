@@ -500,7 +500,6 @@ static errno_t compute_function()
            imgin.im->array.F,
            sizeof(float) * inNBelem);
 
-    clock_gettime(CLOCK_REALTIME, &t1);
 
 
 
@@ -557,11 +556,11 @@ static errno_t compute_function()
         }
     }
 
-    int Save = 1;
-    if (Save == 1)
-    {
-        save_fits("PFmatD", "PFmatD.fits");
-    }
+    // int Save = 1;
+    // if (Save == 1)
+    // {
+    //save_fits("PFmatD", "PFmatD.fits");
+    // }
 
 
     /// ### Compute pseudo-inverse of PFmatD
@@ -586,7 +585,7 @@ static errno_t compute_function()
                 alpha * data.image[IDincp]
                             .array.F[(k0 + 1) * xysize + outpixarray_xy[PFpix]];
         }
-    save_fits("PFfmdat", "PFfmdat.fits");
+    //save_fits("PFfmdat", "PFfmdat.fits");
 
     /// If using MAGMA, call function CUDACOMP_magma_compute_SVDpseudoInverse()\n
     /// Otherwise, call function linopt_compute_SVDpseudoInverse()\n
@@ -621,18 +620,18 @@ static errno_t compute_function()
     printf("Done assembling pseudoinverse\n");
     fflush(stdout);
 
-    if (Save == 1)
-    {
-        save_fits("PF_VTmat", "PF_VTmat.fits");
-        save_fits("PFmatC", "PFmatC.fits");
-    }
+    //if (Save == 1)
+    // {
+    //    save_fits("PF_VTmat", "PF_VTmat.fits");
+    //    save_fits("PFmatC", "PFmatC.fits");
+    // }
     imageID IDmatC = image_ID("PFmatC");
 
     ///
     /// ### Assemble Predictive Filter
     ///
-    printf("Compute filters\n");
-    fflush(stdout);
+    //printf("Compute filters\n");
+    //fflush(stdout);
 
     if (system("mkdir -p pixfilters") != 0)
     {
@@ -640,7 +639,7 @@ static errno_t compute_function()
     }
 
 
-
+    /*
     printf("===========================================================\n");
     printf("ASSEMBLING OUTPUT\n");
     printf("  NBpixout = %ld\n", NBpixout);
@@ -649,7 +648,7 @@ static errno_t compute_function()
     printf("  NBpixin  = %ld\n", NBpixin);
     printf("  PForder  = %u\n", *PForder);
     printf("===========================================================\n");
-
+*/
 
     long IDoutPF2Dn = image_ID("psinvPFmat");
     if (IDoutPF2Dn == -1)
@@ -692,8 +691,7 @@ static errno_t compute_function()
     }
     // delete_image_ID("PFfmdat", DELETE_IMAGE_ERRMODE_WARNING);
 
-    list_image_ID();
-    printf("IDoutPF2Draw = %ld\n", IDoutPF2Draw);
+    //printf("IDoutPF2Draw = %ld\n", IDoutPF2Draw);
     data.image[IDoutPF2Draw].md[0].write = 1;
     memcpy(data.image[IDoutPF2Draw].array.F,
            data.image[IDoutPF2Dn].array.F,
@@ -702,21 +700,22 @@ static errno_t compute_function()
     data.image[IDoutPF2Draw].md[0].cnt0++;
     data.image[IDoutPF2Draw].md[0].write = 0;
 
-    printf("IDoutPF2D = %ld\n", IDoutPF2D);
+    //printf("IDoutPF2D = %ld\n", IDoutPF2D);
     // Mix current PF with last one
     data.image[IDoutPF2D].md[0].write = 1;
 
 
-    /*    if (LOOPmode == 0)
-        {
-            memcpy(data.image[IDoutPF2D].array.F,
-                   data.image[IDoutPF2Dn].array.F,
-                   sizeof(float) * NBpixout * NBpixin * *PForder);
-            save_fits(outPFname, "_outPF.fits");
-        }
-        else
-        {*/
-    printf("Mixing PF matrix with gain = %f ....", *loopgain);
+    // on first iteration, set loopgain to 1 to initalize content
+    float loopgainval = 0.0;
+    if (processinfo->loopcnt == 0)
+    {
+        loopgainval = 1.0;
+    }
+    else
+    {
+        loopgainval = *loopgain;
+    }
+    printf("Mixing PF matrix with gain = %f / %f ....", loopgainval, *loopgain);
     fflush(stdout);
     for (long PFpix = 0; PFpix < NBpixout; PFpix++)
         for (long pix = 0; pix < NBpixin; pix++)
@@ -761,27 +760,24 @@ static errno_t compute_function()
     }
 
 
-    printf("DONE\n");
-    fflush(stdout);
     struct timespec t2;
     clock_gettime(CLOCK_REALTIME, &t2);
 
-    struct timespec tdiff    = timespec_diff(t0, t1);
-    double          tdiffv01 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
+    struct timespec tdiff = timespec_diff(t0, t2);
+    double          texec = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
 
-    tdiff           = timespec_diff(t1, t2);
-    double tdiffv12 = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
+    tdiff        = timespec_diff(t1, t2);
+    double tloop = 1.0 * tdiff.tv_sec + 1.0e-9 * tdiff.tv_nsec;
+
+    t1.tv_sec  = t2.tv_sec;
+    t1.tv_nsec = t2.tv_nsec;
 
     printf("Computing time = %5.3f s / %5.3f s -> fraction = %8.6f\n",
-           tdiffv12,
-           tdiffv01 + tdiffv12,
-           tdiffv12 / (tdiffv01 + tdiffv12));
+           texec,
+           tloop,
+           texec / tloop);
 
 
-
-    printf("==============================================\n");
-    printf("==============================================\n");
-    printf("==============================================\n");
 
     INSERT_STD_PROCINFO_COMPUTEFUNC_END
 
