@@ -72,15 +72,16 @@ imageID LINARFILTERPRED_Build_LinPredictor(
     const char *IDin_name, ///< [in]  Input telemetry, a 2D or 3D image
     long        PForder,   ///< [in]  Number of time steps in output filter
     float
-        PFlag, ///< [in]  Time lag between last measurement and prediction, unit: sampling period
+    PFlag, ///< [in]  Time lag between last measurement and prediction, unit: sampling period
     double
-                SVDeps, ///< [in]  Singular value cutoff limit. Ratio between strongest singular value and limit
+    SVDeps, ///< [in]  Singular value cutoff limit. Ratio between strongest singular value and limit
     double      RegLambda,    ///< [in]  Regularization paramater
     const char *IDoutPF_name, ///< [in]  Output predictive filter name
-    int         outMode, ///< [in]  Output mode. 0: do not write individual files, 1: write individual files (note: output filter cube is always written)
+    int
+    outMode, ///< [in]  Output mode. 0: do not write individual files, 1: write individual files (note: output filter cube is always written)
     int LOOPmode, ///< [in]  1 if running in infinite loop waiting for input telemetry
     float
-        LOOPgain, ///< [in]  If running in loop, mixing coefficient between previous and current filter
+    LOOPgain, ///< [in]  If running in loop, mixing coefficient between previous and current filter
     int testmode);
 
 ///@}
@@ -95,30 +96,30 @@ imageID LINARFILTERPRED_Build_LinPredictor(
 /* =============================================================================================== */
 
 imageID LINARFILTERPRED_Apply_LinPredictor_RT(const char *IDfilt_name,
-                                              const char *IDin_name,
-                                              const char *IDout_name);
+        const char *IDin_name,
+        const char *IDout_name);
 
 imageID LINARFILTERPRED_Apply_LinPredictor(const char *IDfilt_name,
-                                           const char *IDin_name,
-                                           float       PFlag,
-                                           const char *IDout_name);
+        const char *IDin_name,
+        float       PFlag,
+        const char *IDout_name);
 
 imageID LINARFILTERPRED_PF_updatePFmatrix(const char *IDPF_name,
-                                          const char *IDPFM_name,
-                                          float       alpha);
+        const char *IDPFM_name,
+        float       alpha);
 
 imageID LINARFILTERPRED_PF_RealTimeApply(const char *IDmodevalIN_name,
-                                         long        IndexOffset,
-                                         int         semtrig,
-                                         const char *IDPFM_name,
-                                         long        NBPFstep,
-                                         const char *IDPFout_name,
-                                         int         nbGPU,
-                                         long        loop,
-                                         long        NBiter,
-                                         int         SAVEMODE,
-                                         float       tlag,
-                                         long        PFindex);
+        long        IndexOffset,
+        int         semtrig,
+        const char *IDPFM_name,
+        long        NBPFstep,
+        const char *IDPFout_name,
+        int         nbGPU,
+        long        loop,
+        long        NBiter,
+        int         SAVEMODE,
+        float       tlag,
+        long        PFindex);
 
 ///@}
 
